@@ -334,6 +334,45 @@ input[type=range]:disabled{opacity:.35;cursor:default}
 .faq details[open] p{animation:fadeUp .4s both}
 body.dragging .qdrop,body.dragging .stage-empty{animation:breathe 1.2s ease-in-out infinite}
 
+
+/* ================= converter ================= */
+.page.wide{max-width:1500px}
+.conv{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,420px);gap:18px;align-items:start}
+.conv-drop{border:1.5px dashed var(--edge2);border-radius:18px;padding:26px 20px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;transition:background .25s,border-color .25s}
+.conv-drop b{font-size:17px}
+.conv-drop span{color:var(--muted);font-size:13px;max-width:44ch}
+.conv-drop .btn{margin-top:6px}
+.conv-plus{display:block!important;width:84px;height:84px;margin-bottom:4px}
+.conv-plus::before{height:64px!important}.conv-plus::after{width:64px!important}
+:root:not([data-skin=moon]) .conv-plus::before,:root:not([data-skin=moon]) .conv-plus::after{background:var(--rose);box-shadow:0 0 16px rgba(255,111,159,.6)}
+body.dragging .conv-drop{border-color:var(--fg);background:rgba(255,255,255,.05)}
+.conv-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.crow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--edge);animation:fadeUp .4s both}
+.cico{width:44px;height:44px;border-radius:11px;display:grid;place-items:center;font:700 11px/1 var(--mono);background:rgba(255,255,255,.08);border:1px solid var(--edge2);flex:none}
+.cmain{flex:1;min-width:0}
+.cname{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmeta{display:flex;gap:10px;font:500 12px/1.4 var(--mono);color:var(--muted);margin-top:2px}
+.cmeta .bad{color:#ff9a9a}
+.cbar{height:3px;border-radius:9px;background:rgba(255,255,255,.08);margin-top:7px;overflow:hidden}
+.cbar i{display:block;height:100%;width:0;background:var(--glow);transition:width .25s}
+.conv-right{position:sticky;top:12px;display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid var(--edge)}
+.clabel{font:600 11px/1 var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}
+.fmt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fmt{border:1px solid var(--edge);background:rgba(255,255,255,.035);border-radius:13px;padding:11px 12px;text-align:left;display:flex;flex-direction:column;gap:3px;transition:border-color .2s,background .2s,transform .25s cubic-bezier(.3,1.5,.4,1)}
+.fmt b{font:700 16px/1 var(--mono);letter-spacing:.5px}
+.fmt small{color:var(--muted);font-size:11.5px;line-height:1.3}
+.fmt:hover{transform:translateY(-2px);border-color:var(--edge2)}
+.fmt.on{border-color:var(--fg);box-shadow:0 0 0 1px var(--fg),0 8px 24px rgba(0,0,0,.35)}
+:root[data-skin=moon] .fmt.on{background:#000}
+:root:not([data-skin=moon]) .fmt.on{background:rgba(255,111,159,.1);border-color:var(--rose);box-shadow:0 0 0 1px var(--rose)}
+.fmt:disabled{opacity:.4;pointer-events:none}
+.copts{display:flex;flex-direction:column;gap:8px}
+.copt{display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:600;font-size:14px}
+.copt select{background:rgba(255,255,255,.06);border:1px solid var(--edge2);border-radius:10px;padding:7px 10px;min-width:150px}
+.copt select option{background:#111}
+.conv-go{width:100%;padding:13px;font-size:15px}
+.cnote{margin:0;color:var(--muted);font-size:12.5px}
+@media (max-width:900px){.conv{grid-template-columns:1fr}.conv-right{position:static}}
 /* ================= canvas tokens ================= */
 :root{--c1:#ff6f9f;--c2:#ffb067;--rest:rgba(255,255,255,.18)}
 
@@ -451,7 +490,7 @@ body.dragging .qdrop,body.dragging .stage-empty{animation:breathe 1.2s ease-in-o
   :root[data-skin=moon] input[type=range]::-webkit-slider-thumb{width:18px;height:18px;margin-top:-8px}
 }
 /* moon beams light up whatever they cross (--lit is set from the beam positions) */
-:root[data-skin=moon] :is(.btn:not(.hot),.preset:not(.on),.icon-btn,.chip,.tabs button,.track:not(.on),.ctl,.kebab,.pill,.val,.export select,.skin-btn){
+:root[data-skin=moon] :is(.fmt:not(.on),.crow,.btn:not(.hot),.preset:not(.on),.icon-btn,.chip,.tabs button,.track:not(.on),.ctl,.kebab,.pill,.val,.export select,.skin-btn){
   box-shadow:0 0 calc(var(--lit,0)*28px) rgba(255,255,255,calc(var(--lit,0)*.3)),inset 0 0 0 1px rgba(255,255,255,calc(var(--lit,0)*.4));
   background-color:rgba(255,255,255,calc(.025 + var(--lit,0)*.09));
   transition:box-shadow .4s,background-color .4s,border-color .25s,color .2s,transform .3s cubic-bezier(.3,1.5,.4,1)}
@@ -504,6 +543,7 @@ body.dragging .qdrop,body.dragging .stage-empty{animation:breathe 1.2s ease-in-o
       <button data-v="library">Library</button>
       <button data-v="settings">Settings</button>
       <button data-v="faq">FAQ</button>
+      <button data-v="convert">Converter</button>
     </nav>
     <div class="pill"><i></i>Private: your songs never leave this device</div>
     <button class="skin-btn" id="skinBtn" title="Switch design" aria-label="Switch design"><span class="sk-a"></span><span class="sk-m"></span></button>
@@ -1520,7 +1560,7 @@ function moonScene(x, t, dt, W, H, b, S){
 }
 
 // buttons light up while a shaft crosses them
-const LIT_SEL = ".btn,.preset,.icon-btn,.play,.chip,.tabs button,.track,.ctl,.plus-add,.skin-btn,.pill,.val,.kebab,.export select";
+const LIT_SEL = ".fmt,.crow,.btn,.preset,.icon-btn,.play,.chip,.tabs button,.track,.ctl,.plus-add,.skin-btn,.pill,.val,.kebab,.export select";
 setInterval(() => {
   const els = document.querySelectorAll(LIT_SEL);
   if (!isMoon() || !rayState){ els.forEach(e => { if (e.style.getPropertyValue("--lit")) e.style.removeProperty("--lit"); }); return; }
@@ -1709,6 +1749,9 @@ function show(v){
   if (v === "library") renderLibrary();
   if (v === "settings") renderSettings();
   if (v === "faq") renderFaq();
+  if (v === "convert") renderConverter();
+  $("#page").classList.toggle("wide", v === "convert");
+  try { history.replaceState(null, "", v === "convert" ? "#convert" : location.pathname + location.search); } catch {}
   if (v === "studio") requestAnimationFrame(() => { drawWave(); drawSpec(); });
 }
 async function renderLibrary(){
@@ -1778,7 +1821,7 @@ let dragN = 0;
 addEventListener("dragenter", e => { if ([...(e.dataTransfer?.types || [])].includes("Files")){ dragN++; document.body.classList.add("dragging"); } });
 addEventListener("dragleave", () => { if (--dragN <= 0){ dragN = 0; document.body.classList.remove("dragging"); } });
 addEventListener("dragover", e => e.preventDefault());
-addEventListener("drop", e => { e.preventDefault(); dragN = 0; document.body.classList.remove("dragging"); if (e.dataTransfer.files.length){ show("studio"); addFiles(e.dataTransfer.files); } });
+addEventListener("drop", e => { e.preventDefault(); dragN = 0; document.body.classList.remove("dragging"); if (e.dataTransfer.files.length){ if (view === "convert") addConvFiles(e.dataTransfer.files); else { show("studio"); addFiles(e.dataTransfer.files); } } });
 
 /* ================= motion helpers ================= */
 function moveTabInd(){
@@ -1802,6 +1845,353 @@ document.addEventListener("pointerdown", e => {
   b.appendChild(s); setTimeout(() => s.remove(), 700);
 });
 
+/* ================= converter ================= */
+const CONV_FORMATS = [
+  {id:"mp3",  name:"MP3",  ext:"mp3",  desc:"Plays everywhere",            kind:"lossy", rates:[128,192,256,320], def:320},
+  {id:"wav",  name:"WAV",  ext:"wav",  desc:"Uncompressed, lossless",      kind:"pcm",   depth:[16,24,32], defDepth:16},
+  {id:"flac", name:"FLAC", ext:"flac", desc:"Lossless, much smaller",      kind:"pcm",   depth:[16,24], defDepth:16},
+  {id:"m4a",  name:"M4A",  ext:"m4a",  desc:"AAC for iPhone and Apple",    kind:"lossy", rates:[96,128,192,256], def:192, needs:"aac"},
+  {id:"ogg",  name:"OGG",  ext:"ogg",  desc:"Opus in Ogg, tiny and clean", kind:"lossy", rates:[64,96,128,192], def:128, needs:"opus"},
+  {id:"opus", name:"OPUS", ext:"opus", desc:"Opus, best for voice and web", kind:"lossy", rates:[48,64,96,128,192], def:96, needs:"opus"},
+  {id:"webm", name:"WEBM", ext:"webm", desc:"Opus in WebM for browsers",   kind:"lossy", rates:[64,96,128,192], def:128, needs:"opus"},
+  {id:"aiff", name:"AIFF", ext:"aiff", desc:"Uncompressed, for Mac apps",  kind:"pcm",   depth:[16,24], defDepth:16},
+];
+const conv = {files:[], busy:false, support:{opus:null, aac:null}};
+const cp = () => { if (!prefs.conv || !prefs.conv.kbps) prefs.conv = Object.assign({fmt:"mp3", rate:44100, ch:2, kbps:{}, depth:{}}, prefs.conv || {}); return prefs.conv; };
+const fmtSize = b => b > 1048576 ? (b/1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b/1024)) + " KB";
+const loadScript = src => new Promise((res, rej) => { if (document.querySelector(`script[src="${src}"]`)) return res(); const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Could not load " + src)); document.head.appendChild(s); });
+const MUX = {webm:"https://cdn.jsdelivr.net/npm/webm-muxer@5.1.3/build/webm-muxer.js", mp4:"https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.js"};
+
+async function checkSupport(){
+  if (!("AudioEncoder" in window)){ conv.support = {opus:false, aac:false}; return; }
+  const t = async c => { try { return !!(await AudioEncoder.isConfigSupported(c)).supported; } catch { return false; } };
+  conv.support.opus = await t({codec:"opus", sampleRate:48000, numberOfChannels:2, bitrate:128000});
+  conv.support.aac = await t({codec:"mp4a.40.2", sampleRate:44100, numberOfChannels:2, bitrate:128000});
+}
+
+/* ---- PCM writers ---- */
+function toInt(d, bits){ const m = Math.pow(2, bits-1) - 1, a = new Int32Array(d.length);
+  for (let i=0;i<d.length;i++){ let v = Math.round(d[i]*m); a[i] = v > m ? m : v < -m-1 ? -m-1 : v; } return a; }
+function writeWav(chs, rate, bits){
+  const C = chs.length, N = chs[0].length, float = bits === 32, B = bits/8, size = N*C*B;
+  const buf = new ArrayBuffer(44 + size), v = new DataView(buf), w = (o, s) => { for (let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+  w(0,"RIFF"); v.setUint32(4, 36 + size, true); w(8,"WAVE"); w(12,"fmt "); v.setUint32(16,16,true);
+  v.setUint16(20, float ? 3 : 1, true); v.setUint16(22, C, true); v.setUint32(24, rate, true); v.setUint32(28, rate*C*B, true); v.setUint16(32, C*B, true); v.setUint16(34, bits, true);
+  w(36,"data"); v.setUint32(40, size, true);
+  let o = 44;
+  if (float){ for (let i=0;i<N;i++) for (let c=0;c<C;c++){ v.setFloat32(o, chs[c][i], true); o += 4; } }
+  else { const ints = chs.map(d => toInt(d, bits));
+    for (let i=0;i<N;i++) for (let c=0;c<C;c++){ const x = ints[c][i];
+      if (bits === 16) v.setInt16(o, x, true); else { v.setUint8(o, x & 255); v.setUint8(o+1, (x >> 8) & 255); v.setUint8(o+2, (x >> 16) & 255); }
+      o += B; } }
+  return new Blob([buf], {type:"audio/wav"});
+}
+function writeAiff(chs, rate, bits){
+  const C = chs.length, N = chs[0].length, B = bits/8, size = N*C*B, ints = chs.map(d => toInt(d, bits));
+  const buf = new ArrayBuffer(54 + size), v = new DataView(buf), w = (o, s) => { for (let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+  w(0,"FORM"); v.setUint32(4, 46 + size); w(8,"AIFF"); w(12,"COMM"); v.setUint32(16, 18);
+  v.setUint16(20, C); v.setUint32(22, N); v.setUint16(26, bits);
+  // 80-bit extended sample rate
+  let e = 16383 + Math.floor(Math.log2(rate)), m = rate / Math.pow(2, Math.floor(Math.log2(rate)));
+  v.setUint16(28, e); const hi = Math.floor(m * 2**31), lo = Math.round((m * 2**31 - hi) * 2**32);
+  v.setUint32(30, hi >>> 0); v.setUint32(34, lo >>> 0);
+  w(38,"SSND"); v.setUint32(42, 8 + size); v.setUint32(46, 0); v.setUint32(50, 0);
+  let o = 54;
+  for (let i=0;i<N;i++) for (let c=0;c<C;c++){ const x = ints[c][i];
+    if (bits === 16) v.setInt16(o, x); else { v.setUint8(o, (x >> 16) & 255); v.setUint8(o+1, (x >> 8) & 255); v.setUint8(o+2, x & 255); }
+    o += B; }
+  return new Blob([buf], {type:"audio/aiff"});
+}
+
+/* ---- FLAC encoder (fixed predictors + Rice coding) ---- */
+class BitW {
+  constructor(n){ this.b = new Uint8Array(Math.max(4096, n)); this.p = 0; this.acc = 0; this.n = 0; }
+  grow(){ const nb = new Uint8Array(this.b.length*2); nb.set(this.b); this.b = nb; }
+  bits(v, n){ // n <= 31
+    while (n > 0){
+      const take = Math.min(n, 8 - this.n), sh = n - take;
+      this.acc = (this.acc << take) | ((v >>> sh) & ((1 << take) - 1));
+      this.n += take; n -= take;
+      if (this.n === 8){ if (this.p >= this.b.length) this.grow(); this.b[this.p++] = this.acc; this.acc = 0; this.n = 0; }
+    }
+  }
+  zeros(n){ while (n > 0){ const t = Math.min(n, 24); this.bits(0, t); n -= t; } }
+  align(){ if (this.n) this.bits(0, 8 - this.n); }
+}
+const CRC8 = (() => { const t = new Uint8Array(256); for (let i=0;i<256;i++){ let c = i; for (let k=0;k<8;k++) c = c & 0x80 ? ((c << 1) ^ 0x07) & 255 : (c << 1) & 255; t[i] = c; } return t; })();
+const CRC16 = (() => { const t = new Uint16Array(256); for (let i=0;i<256;i++){ let c = i << 8; for (let k=0;k<8;k++) c = c & 0x8000 ? ((c << 1) ^ 0x8005) & 0xffff : (c << 1) & 0xffff; t[i] = c; } return t; })();
+async function writeFlac(chs, rate, bps, onProg){
+  const C = chs.length, N = chs[0].length, BS = 4096, ints = chs.map(d => toInt(d, bps));
+  const W = new BitW(Math.ceil(N*C*bps/8*0.75) + 8192);
+  [0x66,0x4C,0x61,0x43].forEach(x => W.bits(x, 8));
+  W.bits(1,1); W.bits(0,7); W.bits(34,24);
+  W.bits(BS,16); W.bits(BS,16); W.bits(0,24); W.bits(0,24);
+  W.bits(rate,20); W.bits(C-1,3); W.bits(bps-1,5);
+  W.bits(Math.floor(N/4294967296) & 15, 4); W.bits((N >>> 16) & 0xffff, 16); W.bits(N & 0xffff, 16);
+  for (let i=0;i<16;i++) W.bits(0, 8);
+  const res = new Int32Array(BS), u = new Uint32Array(BS);
+  const sub = (x, s0, bs) => {
+    let same = true; for (let i=1;i<bs;i++) if (x[s0+i] !== x[s0]){ same = false; break; }
+    if (same){ W.bits(0,1); W.bits(0,6); W.bits(0,1); W.bits(x[s0] & ((1 << bps) - 1), bps); return; }
+    // pick the fixed predictor order with the smallest residual
+    let best = 0, bestSum = Infinity;
+    for (let o=0;o<=Math.min(4, bs-1);o++){
+      let s = 0;
+      for (let i=o;i<bs;i++){ const j = s0+i; let r;
+        if (o === 0) r = x[j]; else if (o === 1) r = x[j]-x[j-1]; else if (o === 2) r = x[j]-2*x[j-1]+x[j-2];
+        else if (o === 3) r = x[j]-3*x[j-1]+3*x[j-2]-x[j-3]; else r = x[j]-4*x[j-1]+6*x[j-2]-4*x[j-3]+x[j-4];
+        s += r < 0 ? -r : r; }
+      if (s < bestSum){ bestSum = s; best = o; }
+    }
+    const o = best, n = bs - o;
+    for (let i=o;i<bs;i++){ const j = s0+i; let r;
+      if (o === 0) r = x[j]; else if (o === 1) r = x[j]-x[j-1]; else if (o === 2) r = x[j]-2*x[j-1]+x[j-2];
+      else if (o === 3) r = x[j]-3*x[j-1]+3*x[j-2]-x[j-3]; else r = x[j]-4*x[j-1]+6*x[j-2]-4*x[j-3]+x[j-4];
+      res[i-o] = r; u[i-o] = ((r << 1) ^ (r >> 31)) >>> 0; }
+    // choose Rice partition order + parameters
+    const costK = (a, b, k) => { let s = (b - a)*(k + 1); for (let i=a;i<b;i++) s += u[i] >>> k; return s; };
+    const bestK = (a, b) => { let sum = 0; for (let i=a;i<b;i++) sum += u[i]; const mean = sum/Math.max(1, b-a);
+      let k0 = mean > 1 ? Math.min(30, Math.floor(Math.log2(mean))) : 0, bk = k0, bc = Infinity;
+      for (let k=Math.max(0,k0-1);k<=Math.min(30,k0+1);k++){ const c = costK(a, b, k); if (c < bc){ bc = c; bk = k; } } return [bk, bc]; };
+    let bestPo = 0, bestPlan = null, bestCost = Infinity;
+    for (let po=0; po<=6; po++){
+      if (bs % (1 << po) || (bs >> po) <= o) break;
+      const plen = bs >> po, plan = []; let cost = 0;
+      for (let p=0;p<(1 << po);p++){ const a = p === 0 ? 0 : p*plen - o, b = (p+1)*plen - o; const [k, c] = bestK(a, b); plan.push([a, b, k]); cost += c + 5; }
+      if (cost < bestCost){ bestCost = cost; bestPo = po; bestPlan = plan; }
+    }
+    if (bestCost + o*bps + 8 >= bs*bps){ // incompressible: store verbatim
+      W.bits(0,1); W.bits(1,6); W.bits(0,1); const m = (1 << bps) - 1;
+      for (let i=0;i<bs;i++) W.bits(x[s0+i] & m, bps); return; }
+    W.bits(0,1); W.bits(8 + o, 6); W.bits(0,1);
+    for (let i=0;i<o;i++) W.bits(x[s0+i] & ((1 << bps) - 1), bps);
+    W.bits(1, 2); W.bits(bestPo, 4);           // RICE2: 5-bit parameters
+    for (const [a, b, k] of bestPlan){
+      W.bits(k, 5);
+      const mk = (1 << k) - 1;
+      for (let i=a;i<b;i++){ const q = u[i] >>> k; W.zeros(q); W.bits(1, 1); if (k) W.bits(u[i] & mk, k); }
+    }
+  };
+  for (let s0=0, f=0; s0<N; s0+=BS, f++){
+    const bs = Math.min(BS, N - s0), start = W.p;
+    W.bits(0x3FFE,14); W.bits(0,1); W.bits(0,1); W.bits(7,4); W.bits(0,4); W.bits(C-1,4); W.bits(0,3); W.bits(0,1);
+    if (f < 0x80) W.bits(f, 8);
+    else if (f < 0x800){ W.bits(0xC0 | (f >> 6), 8); W.bits(0x80 | (f & 63), 8); }
+    else if (f < 0x10000){ W.bits(0xE0 | (f >> 12), 8); W.bits(0x80 | ((f >> 6) & 63), 8); W.bits(0x80 | (f & 63), 8); }
+    else { W.bits(0xF0 | (f >> 18), 8); W.bits(0x80 | ((f >> 12) & 63), 8); W.bits(0x80 | ((f >> 6) & 63), 8); W.bits(0x80 | (f & 63), 8); }
+    W.bits(bs - 1, 16);
+    let c8 = 0; for (let i=start;i<W.p;i++) c8 = CRC8[c8 ^ W.b[i]]; W.bits(c8, 8);
+    for (let c=0;c<C;c++) sub(ints[c], s0, bs);
+    W.align();
+    let c16 = 0; for (let i=start;i<W.p;i++) c16 = ((c16 << 8) ^ CRC16[((c16 >> 8) ^ W.b[i]) & 255]) & 0xffff; W.bits(c16, 16);
+    if (f % 60 === 59){ onProg && onProg(s0/N); await new Promise(r => setTimeout(r, 0)); }
+  }
+  return new Blob([W.b.subarray(0, W.p)], {type:"audio/flac"});
+}
+
+/* ---- MP3 ---- */
+async function writeMp3(chs, rate, kbps, onProg){
+  if (!window.lamejs) throw new Error("The MP3 encoder did not load. Check your connection.");
+  const C = chs.length, enc = new lamejs.Mp3Encoder(C, rate, kbps), parts = [], blk = 1152, N = chs[0].length;
+  const toI = x => { x = x > 1 ? 1 : x < -1 ? -1 : x; return x < 0 ? x*0x8000 : x*0x7fff; };
+  for (let i=0, k=0; i<N; i+=blk, k++){
+    const m = Math.min(blk, N - i), l = new Int16Array(m), r = C > 1 ? new Int16Array(m) : null;
+    for (let j=0;j<m;j++){ l[j] = toI(chs[0][i+j]); if (r) r[j] = toI(chs[1][i+j]); }
+    const out = r ? enc.encodeBuffer(l, r) : enc.encodeBuffer(l); if (out.length) parts.push(new Uint8Array(out));
+    if (k % 300 === 0){ onProg && onProg(i/N); await new Promise(r => setTimeout(r, 0)); }
+  }
+  const end = enc.flush(); if (end.length) parts.push(new Uint8Array(end));
+  return new Blob(parts, {type:"audio/mpeg"});
+}
+
+/* ---- WebCodecs (Opus / AAC) ---- */
+async function wcEncode(chs, rate, codec, kbps, onProg){
+  const C = chs.length, N = chs[0].length, chunks = []; let err = null, meta0 = null;
+  const enc = new AudioEncoder({output:(ch, meta) => { const d = new Uint8Array(ch.byteLength); ch.copyTo(d); chunks.push({chunk:ch, data:d, meta}); if (meta && meta.decoderConfig && !meta0) meta0 = meta; }, error:e => { err = e; }});
+  enc.configure({codec, sampleRate:rate, numberOfChannels:C, bitrate:kbps*1000});
+  const F = Math.round(rate/10);
+  for (let i=0, k=0; i<N; i+=F, k++){
+    const n = Math.min(F, N - i), data = new Float32Array(n*C);
+    for (let c=0;c<C;c++) data.set(chs[c].subarray(i, i+n), c*n);
+    enc.encode(new AudioData({format:"f32-planar", sampleRate:rate, numberOfFrames:n, numberOfChannels:C, timestamp:Math.round(i/rate*1e6), data}));
+    if (err) throw err;
+    if (k % 20 === 19){ onProg && onProg(i/N); while (enc.encodeQueueSize > 8) await new Promise(r => setTimeout(r, 5)); await new Promise(r => setTimeout(r, 0)); }
+  }
+  await enc.flush(); enc.close();
+  if (err) throw err;
+  return {chunks, meta0};
+}
+const OGG_CRC = (() => { const t = new Uint32Array(256); for (let i=0;i<256;i++){ let r = i << 24; for (let k=0;k<8;k++) r = r & 0x80000000 ? ((r << 1) ^ 0x04C11DB7) >>> 0 : (r << 1) >>> 0; t[i] = r; } return t; })();
+function oggOpus(packets, C, preSkip, inRate, total){
+  const pages = [], serial = (Math.random()*0xffffffff) >>> 0; let seq = 0;
+  const page = (data, granule, flags) => {
+    const segs = []; let left = data.length; while (left >= 255){ segs.push(255); left -= 255; } segs.push(left);
+    const h = new Uint8Array(27 + segs.length + data.length), v = new DataView(h.buffer);
+    h.set([0x4F,0x67,0x67,0x53], 0); h[4] = 0; h[5] = flags;
+    v.setUint32(6, granule % 4294967296, true); v.setUint32(10, Math.floor(granule/4294967296), true);
+    v.setUint32(14, serial, true); v.setUint32(18, seq++, true); v.setUint32(22, 0, true); h[26] = segs.length;
+    h.set(segs, 27); h.set(data, 27 + segs.length);
+    let crc = 0; for (let i=0;i<h.length;i++) crc = ((crc << 8) ^ OGG_CRC[((crc >>> 24) ^ h[i]) & 255]) >>> 0;
+    v.setUint32(22, crc, true); pages.push(h);
+  };
+  const head = new Uint8Array(19), hv = new DataView(head.buffer);
+  head.set([...("OpusHead")].map(c => c.charCodeAt(0))); head[8] = 1; head[9] = C; hv.setUint16(10, preSkip, true); hv.setUint32(12, inRate, true);
+  page(head, 0, 2);
+  const vendor = "SlowWave", tags = new Uint8Array(8 + 4 + vendor.length + 4), tv = new DataView(tags.buffer);
+  tags.set([...("OpusTags")].map(c => c.charCodeAt(0))); tv.setUint32(8, vendor.length, true); tags.set([...vendor].map(c => c.charCodeAt(0)), 12);
+  page(tags, 0, 0);
+  let gran = 0;
+  packets.forEach((p, i) => { gran += p.samples; const last = i === packets.length - 1; page(p.data, last ? Math.min(gran, preSkip + total) : gran, last ? 4 : 0); });
+  return new Blob(pages, {type:"audio/ogg"});
+}
+
+/* ---- channel / rate prep ---- */
+function prepChannels(buf, want){
+  const src = []; for (let c=0;c<buf.numberOfChannels;c++) src.push(buf.getChannelData(c));
+  if (want === 1){ if (src.length === 1) return [src[0]]; const m = new Float32Array(src[0].length); for (const d of src) for (let i=0;i<m.length;i++) m[i] += d[i]/src.length; return [m]; }
+  return src.length === 1 ? [src[0], src[0]] : [src[0], src[1]];
+}
+async function decodeAt(file, rate){
+  const ab = await file.arrayBuffer();
+  const oc = new OfflineAudioContext(2, 1, rate);
+  return oc.decodeAudioData(ab);
+}
+
+async function convertOne(item){
+  const o = cp(), F = CONV_FORMATS.find(f => f.id === o.fmt);
+  const kbps = o.kbps[F.id] || F.def, depth = o.depth[F.id] || F.defDepth;
+  let rate = o.rate;
+  if (F.needs === "opus") rate = 48000;
+  if (F.needs === "aac" && rate !== 44100 && rate !== 48000) rate = 44100;
+  if (F.id === "mp3" && ![8000,11025,12000,16000,22050,24000,32000,44100,48000].includes(rate)) rate = 44100;
+  const prog = p => { item.p = p; renderConvRow(item); };
+  item.status = "Reading"; prog(0.03);
+  const buf = await decodeAt(item.file, rate);
+  item.dur = buf.duration;
+  const chs = prepChannels(buf, o.ch), N = chs[0].length;
+  item.status = "Converting"; prog(0.1);
+  const sp = p => prog(0.1 + p*0.88);
+  let blob;
+  if (F.id === "wav") blob = writeWav(chs, rate, depth);
+  else if (F.id === "aiff") blob = writeAiff(chs, rate, depth);
+  else if (F.id === "flac") blob = await writeFlac(chs, rate, depth, sp);
+  else if (F.id === "mp3") blob = await writeMp3(chs, rate, kbps, sp);
+  else if (F.needs === "opus"){
+    const {chunks, meta0} = await wcEncode(chs, rate, "opus", kbps, sp);
+    if (F.id === "webm"){
+      await loadScript(MUX.webm);
+      const target = new WebMMuxer.ArrayBufferTarget();
+      const mux = new WebMMuxer.Muxer({target, audio:{codec:"A_OPUS", sampleRate:48000, numberOfChannels:chs.length}});
+      chunks.forEach(c => mux.addAudioChunk(c.chunk, c.meta)); mux.finalize();
+      blob = new Blob([target.buffer], {type:"audio/webm"});
+    } else {
+      let pre = 312;
+      const desc = meta0 && meta0.decoderConfig && meta0.decoderConfig.description;
+      if (desc){ try { const d = new Uint8Array(desc instanceof ArrayBuffer ? desc : desc.buffer, desc.byteOffset || 0, desc.byteLength); if (d.length >= 12 && d[0] === 0x4F) pre = d[10] | (d[11] << 8); } catch {} }
+      const packets = chunks.map(c => ({data:c.data, samples:Math.round((c.chunk.duration || 20000)*48/1000)}));
+      blob = oggOpus(packets, chs.length, pre, 48000, N);
+      if (F.id === "opus") blob = new Blob([blob], {type:"audio/opus"});
+    }
+  } else if (F.needs === "aac"){
+    const {chunks} = await wcEncode(chs, rate, "mp4a.40.2", kbps, sp);
+    await loadScript(MUX.mp4);
+    const target = new Mp4Muxer.ArrayBufferTarget();
+    const mux = new Mp4Muxer.Muxer({target, audio:{codec:"aac", sampleRate:rate, numberOfChannels:chs.length}, fastStart:"in-memory"});
+    chunks.forEach(c => mux.addAudioChunk(c.chunk, c.meta)); mux.finalize();
+    blob = new Blob([target.buffer], {type:"audio/mp4"});
+  }
+  item.out = blob; item.outName = item.file.name.replace(/\.[^.]+$/, "") + "." + F.ext;
+  item.status = "Done"; item.p = 1; renderConvRow(item);
+  return blob;
+}
+
+async function convertAll(){
+  if (conv.busy) return;
+  if (!conv.files.length){ toast("Add a file to convert first.", 2200); return; }
+  conv.busy = true; renderConvControls();
+  const sig = cp().fmt + JSON.stringify(cp());
+  for (const it of conv.files){
+    if (it.status === "Done" && it.sig === sig) continue;
+    try { await convertOne(it); it.sig = sig; if (prefs.convAuto !== false) saveBlob(it.out, it.outName); }
+    catch (e){ it.status = "Failed"; it.err = (e && e.message) || "This file could not be converted."; renderConvRow(it); }
+  }
+  conv.busy = false; renderConvControls();
+  const ok = conv.files.filter(f => f.status === "Done").length;
+  toast(`Converted ${ok} of ${conv.files.length} ${conv.files.length === 1 ? "file" : "files"}`, 2600);
+}
+function addConvFiles(list){
+  [...list].forEach(f => conv.files.push({id:uid++, file:f, status:"Ready", p:0}));
+  renderConverter();
+}
+function renderConvRow(it){
+  const el = document.querySelector(`[data-conv="${it.id}"]`); if (!el) return;
+  const st = el.querySelector(".cst"), bar = el.querySelector(".cbar i"), dl = el.querySelector("[data-dl]");
+  st.textContent = it.status === "Done" ? `Done · ${fmtSize(it.out.size)}` : it.status === "Failed" ? it.err : it.status === "Ready" ? "Ready" : `${it.status} ${Math.round(it.p*100)}%`;
+  st.classList.toggle("bad", it.status === "Failed");
+  bar.style.width = Math.round((it.p || 0)*100) + "%";
+  dl.hidden = it.status !== "Done";
+}
+function renderConvControls(){
+  const b = $("#convGo"); if (!b) return;
+  b.disabled = conv.busy; b.innerHTML = conv.busy ? '<span class="spin"></span>Converting…' : `${I.down}Convert ${conv.files.length > 1 ? "all " + conv.files.length : ""}`;
+}
+async function renderConverter(){
+  if (conv.support.opus === null) await checkSupport();
+  const o = cp(), F = CONV_FORMATS.find(f => f.id === o.fmt) || CONV_FORMATS[0];
+  const pg = $("#page");
+  pg.innerHTML = `<h1>Converter</h1><p class="sub">Turn any audio or video file into the format you need. Everything happens on your device.</p>
+  <div class="conv">
+    <div class="conv-left">
+      <div class="conv-drop" id="convDrop">
+        <button class="plus-add conv-plus" id="convPlus" aria-label="Add files"><i></i><i></i></button>
+        <b>Drop files here</b><span>MP3, WAV, FLAC, OGG, M4A, AAC, OPUS, WEBM, even MP4 video</span>
+        <button class="btn" id="convPick">Choose files</button>
+        <input type="file" id="convIn" multiple accept="audio/*,video/*" hidden>
+      </div>
+      <div class="conv-list" id="convList">${conv.files.map(it => `
+        <div class="crow" data-conv="${it.id}">
+          <div class="cico">${esc((it.file.name.split(".").pop() || "?").slice(0,4).toUpperCase())}</div>
+          <div class="cmain"><div class="cname" title="${esc(it.file.name)}">${esc(it.file.name)}</div>
+            <div class="cmeta"><span>${fmtSize(it.file.size)}</span><span class="cst"></span></div>
+            <div class="cbar"><i></i></div></div>
+          <button class="icon-btn" data-dl="${it.id}" title="Download" aria-label="Download" hidden>${I.down}</button>
+          <button class="icon-btn" data-rm="${it.id}" title="Remove" aria-label="Remove"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>`).join("")}</div>
+    </div>
+    <div class="conv-right">
+      <div class="clabel">Convert to</div>
+      <div class="fmt-grid">${CONV_FORMATS.map(f => { const off = f.needs && !conv.support[f.needs];
+        return `<button class="fmt${f.id === F.id ? " on" : ""}" data-fmt="${f.id}" ${off ? "disabled title=\"Your browser cannot create this format. Try Chrome or Edge.\"" : ""}><b>${f.name}</b><small>${off ? "Not available in this browser" : f.desc}</small></button>`; }).join("")}</div>
+      <div class="copts">
+        ${F.kind === "lossy" ? `<label class="copt" for="cQ"><span>Quality</span><select id="cQ">${F.rates.map(r => `<option value="${r}">${r} kbps</option>`).join("")}</select></label>`
+          : `<label class="copt" for="cQ"><span>Bit depth</span><select id="cQ">${F.depth.map(d => `<option value="${d}">${d === 32 ? "32-bit float" : d + "-bit"}</option>`).join("")}</select></label>`}
+        <label class="copt" for="cR"><span>Sample rate</span><select id="cR" ${F.needs === "opus" ? "disabled" : ""}>${(F.needs === "opus" ? [48000] : F.needs === "aac" ? [44100,48000] : [22050,32000,44100,48000,96000].filter(r => F.id !== "mp3" || r <= 48000)).map(r => `<option value="${r}">${r/1000} kHz</option>`).join("")}</select></label>
+        <label class="copt" for="cC"><span>Channels</span><select id="cC"><option value="2">Stereo</option><option value="1">Mono</option></select></label>
+      </div>
+      <button class="btn hot conv-go" id="convGo"></button>
+      <p class="cnote">${F.kind === "lossy" ? "Higher kbps sounds better and makes bigger files." : F.id === "flac" ? "FLAC keeps every detail and is about half the size of WAV." : "Uncompressed: perfect quality, big files."}</p>
+    </div>
+  </div>`;
+  const q = $("#cQ"), r = $("#cR"), c = $("#cC");
+  q.value = F.kind === "lossy" ? (o.kbps[F.id] || F.def) : (o.depth[F.id] || F.defDepth);
+  r.value = F.needs === "opus" ? 48000 : ([...r.options].some(x => +x.value === o.rate) ? o.rate : 44100);
+  c.value = o.ch;
+  q.onchange = () => { if (F.kind === "lossy") o.kbps[F.id] = +q.value; else o.depth[F.id] = +q.value; savePrefs(); };
+  r.onchange = () => { o.rate = +r.value; savePrefs(); };
+  c.onchange = () => { o.ch = +c.value; savePrefs(); };
+  pg.querySelectorAll("[data-fmt]").forEach(b => b.onclick = () => { o.fmt = b.dataset.fmt; savePrefs(); renderConverter(); });
+  $("#convPick").onclick = $("#convPlus").onclick = () => $("#convIn").click();
+  $("#convIn").onchange = e => { addConvFiles(e.target.files); e.target.value = ""; };
+  $("#convGo").onclick = convertAll;
+  $("#convList").onclick = e => {
+    const d = e.target.closest("[data-dl]"), rm = e.target.closest("[data-rm]");
+    if (d){ const it = conv.files.find(x => x.id == d.dataset.dl); if (it && it.out) saveBlob(it.out, it.outName); }
+    if (rm && !conv.busy){ conv.files = conv.files.filter(x => x.id != rm.dataset.rm); renderConverter(); }
+  };
+  conv.files.forEach(renderConvRow);
+  renderConvControls();
+}
+
 /* ================= design switching ================= */
 function setSkin(v, fromEl){
   if (v === prefs.skin) return;
@@ -1821,7 +2211,8 @@ refreshTok();
 
 renderList(); renderStage(); moveTabInd();
 restoreSession();
-window.__sw = {tracks, get cur(){ return cur; }, get playing(){ return playing; }, addFiles, renderTrack, encodeWav, encodeMp3, play, pause, curPos, setParam, applyPreset, seek};
+if (location.hash === "#convert") show("convert");
+window.__sw = {conv, cp, convertOne, addConvFiles, show, tracks, get cur(){ return cur; }, get playing(){ return playing; }, addFiles, renderTrack, encodeWav, encodeMp3, play, pause, curPos, setParam, applyPreset, seek};
 })();
 </script>
 </body>
