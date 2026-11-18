@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0c0915">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Instrument+Serif:ital@0;1&family=Libre+Baskerville:wght@700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 <style>
 /* Concept: a late-night listening room. Ink-violet dark, a moonlit rose→amber "afterglow"
@@ -330,6 +330,136 @@ input[type=range]:disabled{opacity:.35;cursor:default}
 .faq details[open] p{animation:fadeUp .4s both}
 body.dragging .qdrop,body.dragging .stage-empty{animation:breathe 1.2s ease-in-out infinite}
 
+/* ================= canvas tokens ================= */
+:root{--c1:#ff6f9f;--c2:#ffb067;--rest:rgba(255,255,255,.18)}
+
+/* ================= design switch button ================= */
+.skin-btn{width:62px;height:34px;border-radius:999px;border:1px solid var(--edge2);background:var(--glass);position:relative;padding:0;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);overflow:hidden;flex:none}
+.skin-btn span{position:absolute;top:5px;width:22px;height:22px;border-radius:50%;transition:transform .5s cubic-bezier(.3,1.5,.4,1),opacity .4s}
+.skin-btn .sk-a{left:6px;background:var(--glow);box-shadow:0 0 12px rgba(255,111,159,.6)}
+.skin-btn .sk-m{right:6px;background:radial-gradient(circle at 35% 35%,#fff,#cfcfcf 70%);opacity:.35;transform:scale(.7)}
+.skin-btn .sk-m::before,.skin-btn .sk-m::after{content:"";position:absolute;border-radius:50%;background:#9a9a9a}
+.skin-btn .sk-m::before{width:6px;height:6px;left:5px;top:6px}.skin-btn .sk-m::after{width:4px;height:4px;right:5px;bottom:5px}
+:root[data-skin=moon] .skin-btn .sk-a{opacity:.35;transform:scale(.7)}
+:root[data-skin=moon] .skin-btn .sk-m{opacity:1;transform:none;box-shadow:0 0 14px rgba(255,255,255,.5)}
+
+/* design + player pickers in Settings */
+.pick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:4px}
+.pick button{border:1px solid var(--edge);background:rgba(255,255,255,.03);border-radius:16px;padding:10px;text-align:left;display:flex;flex-direction:column;gap:9px;transition:border-color .25s,transform .3s cubic-bezier(.3,1.5,.4,1),background .25s}
+.pick button:hover{transform:translateY(-3px);border-color:var(--edge2)}
+.pick button.on{border-color:var(--fg);box-shadow:0 0 0 1px var(--fg),0 10px 30px rgba(0,0,0,.35)}
+.pick b{font-weight:700;font-size:14px}
+.pick small{color:var(--muted);font-size:12px;margin-top:-6px}
+.pv{height:92px;border-radius:11px;position:relative;overflow:hidden}
+.pv.aurora{background:radial-gradient(60% 80% at 20% 20%,rgba(255,111,159,.7),transparent 70%),radial-gradient(60% 80% at 85% 25%,rgba(157,123,255,.7),transparent 70%),radial-gradient(70% 70% at 70% 100%,rgba(255,176,103,.6),transparent 70%),#0c0915}
+.pv.moon{background:#000}
+.pv.moon::before{content:"";position:absolute;right:-18px;top:-22px;width:74px;height:74px;border-radius:50%;background:radial-gradient(circle at 35% 65%,#fff,#d9d9d9 70%,#bdbdbd);box-shadow:0 0 30px rgba(255,255,255,.35)}
+.pv.moon::after{content:"";position:absolute;inset:0;background:radial-gradient(1px 1px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 40% 70%,#fff,transparent),radial-gradient(1px 1px at 65% 50%,#fff,transparent),radial-gradient(1px 1px at 12% 80%,#fff,transparent),radial-gradient(1px 1px at 50% 20%,#fff,transparent),
+  linear-gradient(200deg,transparent 30%,rgba(255,255,255,.12) 31%,rgba(255,255,255,.12) 36%,transparent 37%),linear-gradient(215deg,transparent 45%,rgba(255,255,255,.09) 46%,rgba(255,255,255,.09) 50%,transparent 51%)}
+.pv.vinylp,.pv.cassp{background:rgba(255,255,255,.04);display:grid;place-items:center}
+.pv.vinylp i{width:68px;height:68px;border-radius:50%;background:radial-gradient(circle,var(--fg) 0 12%,transparent 12.5%),repeating-radial-gradient(circle,#111 0 1.5px,#222 1.5px 3px);animation:spin 4s linear infinite}
+.pv.cassp i{width:104px;height:66px;border-radius:7px;background:#1b1b1b;border:1px solid rgba(255,255,255,.2);position:relative}
+.pv.cassp i::before{content:"";position:absolute;left:8px;right:8px;top:7px;height:36px;border-radius:4px;background:#e9e7e1}
+.pv.cassp i::after{content:"";position:absolute;left:30px;right:30px;top:18px;height:14px;border-radius:8px;background:#0b0b0b}
+
+/* ================= cassette player ================= */
+.cass-wrap{position:relative;flex:none;width:clamp(230px,24vw,360px);max-width:100%;aspect-ratio:320/200}
+.cass-wrap::before{content:"";position:absolute;inset:-12% -8%;border-radius:40%;background:radial-gradient(closest-side,rgba(var(--glowrgb,255,140,170),calc(.12 + var(--beat,0)*.3)),transparent 70%);filter:blur(10px);pointer-events:none}
+.cass{width:100%;height:100%;display:block;filter:drop-shadow(0 18px 40px rgba(0,0,0,.6));transition:transform .5s cubic-bezier(.3,1.4,.4,1)}
+.playing-deck .cass{transform:rotate(-1.5deg) scale(calc(1.01 + var(--beat,0)*.03))}
+.cass .lbl-title{font:700 17px "Libre Baskerville","Times New Roman",serif;letter-spacing:.5px}
+.cass .lbl-small{font:700 11px "Libre Baskerville","Times New Roman",serif;letter-spacing:.4px}
+.stage-empty .cass-wrap{width:240px;animation:float 6s ease-in-out infinite}
+
+/* ================= MOON design ================= */
+:root[data-skin=moon]{
+  --ink:#000; --ink2:#050505;
+  --glass:rgba(6,6,6,.62); --glass2:rgba(14,14,14,.6); --edge:rgba(255,255,255,.1); --edge2:rgba(255,255,255,.24);
+  --fg:#f5f5f2; --muted:#9b9b98; --dim:#5d5d5b;
+  --rose:#ffffff; --amber:#ffffff; --lilac:#bdbdbd; --mint:#ffffff;
+  --glow:linear-gradient(120deg,#ffffff,#d6d6d6);
+  --c1:#ffffff; --c2:#bdbdbd; --rest:rgba(255,255,255,.14); --glowrgb:255,255,255;
+  --display:"Instrument Serif","Times New Roman",serif;
+}
+/* big thin "+" that adds a song (Moon design) */
+.plus-add{display:none;position:relative;width:120px;height:120px;border:0;background:none;color:#fff;padding:0;border-radius:50%}
+.plus-add::before,.plus-add::after{content:"";position:absolute;left:50%;top:50%;background:#fff;border-radius:2px;box-shadow:0 0 18px rgba(255,255,255,.7);transition:transform .5s cubic-bezier(.3,1.5,.4,1)}
+.plus-add::before{width:2.5px;height:96px;transform:translate(-50%,-50%)}
+.plus-add::after{width:96px;height:2.5px;transform:translate(-50%,-50%)}
+.plus-add:hover::before{transform:translate(-50%,-50%) rotate(90deg) scaleY(1.12)}
+.plus-add:hover::after{transform:translate(-50%,-50%) rotate(90deg) scaleX(1.12)}
+.plus-add i{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,255,255,.25);animation:ring 2.4s cubic-bezier(.2,.6,.3,1) infinite}
+.plus-add i+i{animation-delay:1.2s}
+.plus-add:active{transform:scale(.92)}
+:root[data-skin=moon] .stage-empty .plus-add{display:block;animation:fadeUp .9s .3s both,float 5s 1.2s ease-in-out infinite}
+:root[data-skin=moon] .stage-empty #emptyAdd,:root[data-skin=moon] .stage-empty .vinyl-wrap,:root[data-skin=moon] .stage-empty .cass-wrap{display:none}
+:root[data-skin=moon] .stage-empty{border-color:rgba(255,255,255,.1)}
+:root[data-skin=moon] .grain{opacity:.05}
+:root[data-skin=moon] :is(.word,.ttl,.stage-empty h1,.page h1){font-family:var(--display);font-weight:400;letter-spacing:-.3px}
+:root[data-skin=moon] .word{font-size:25px;font-style:italic}
+:root[data-skin=moon] .ttl{font-size:clamp(28px,3.1vw,44px);line-height:1.02}
+:root[data-skin=moon] .stage-empty h1{font-size:clamp(38px,4.6vw,64px);font-style:italic}
+:root[data-skin=moon] .page h1{font-size:44px}
+:root[data-skin=moon] h2.h{font-family:var(--mono);font-weight:600;letter-spacing:2px}
+:root[data-skin=moon] .word em,:root[data-skin=moon] .stage-empty h1 em{background:linear-gradient(90deg,#fff,#8f8f8f,#fff,#fff);background-size:200% 100%;-webkit-background-clip:text;background-clip:text}
+:root[data-skin=moon] .ttl{background:linear-gradient(90deg,#fff 0 40%,#8a8a8a 50%,#fff 60% 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text}
+:root[data-skin=moon] .mark{background:#fff;box-shadow:0 0 24px rgba(255,255,255,.35)}
+:root[data-skin=moon] .mark svg{stroke:#000}
+:root[data-skin=moon] .panel,:root[data-skin=moon] .tabs,:root[data-skin=moon] .pill,:root[data-skin=moon] .skin-btn{backdrop-filter:blur(7px) saturate(110%);-webkit-backdrop-filter:blur(7px) saturate(110%)}
+:root[data-skin=moon]{--glass:rgba(0,0,0,.5)}
+:root[data-skin=moon] .pill,:root[data-skin=moon] .skin-btn{background:rgba(0,0,0,.85)}
+:root[data-skin=moon] .panel{background:var(--glass);box-shadow:0 20px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06)}
+:root[data-skin=moon] .panel::before{background:conic-gradient(from var(--ang),transparent 0 62%,rgba(255,255,255,.75) 78%,rgba(255,255,255,.25) 88%,transparent 95%)}
+:root[data-skin=moon] .panel::after{background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.07),transparent 60%)}
+/* active = black with a white edge */
+:root[data-skin=moon] .btn.hot{background:#000;background-image:none;color:#fff;border:1px solid #fff;box-shadow:0 0 0 3px rgba(255,255,255,.06),0 0 26px rgba(255,255,255,.12)}
+:root[data-skin=moon] .btn.hot:hover{background:#0d0d0d;box-shadow:0 0 0 4px rgba(255,255,255,.1),0 0 36px rgba(255,255,255,.25)}
+:root[data-skin=moon] .btn::after,:root[data-skin=moon] .preset::after{background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent)}
+:root[data-skin=moon] .play{background:#000;color:#fff;border:1.5px solid #fff;box-shadow:0 0 0 5px rgba(255,255,255,.06),0 0 40px rgba(255,255,255,.22)}
+:root[data-skin=moon] .play::before,:root[data-skin=moon] .play::after{border-color:rgba(255,255,255,.75)}
+:root[data-skin=moon] .preset.on{background:#000;border-color:#fff;box-shadow:0 0 0 1px #fff,0 0 28px rgba(255,255,255,.18)}
+:root[data-skin=moon] .track.on{background:#000;border-color:rgba(255,255,255,.7)}
+:root[data-skin=moon] .tab-ind{background:#000;box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 0 18px rgba(255,255,255,.15)}
+:root[data-skin=moon] .toggle.on{background:#fff}
+:root[data-skin=moon] .toggle.on::after{background:#000}
+:root[data-skin=moon] .count{background:#fff;color:#000}
+:root[data-skin=moon] .beta{background:rgba(255,255,255,.1);color:#ddd}
+:root[data-skin=moon] .live i,:root[data-skin=moon] .pill i{background:#fff;box-shadow:0 0 10px #fff}
+:root[data-skin=moon] .disc::after{background:radial-gradient(circle at 35% 35%,#fff,#bbb)}
+:root[data-skin=moon] .vinyl .lbl{background:radial-gradient(circle at 35% 65%,#fff,#d7d7d7 70%,#b9b9b9)}
+:root[data-skin=moon] .vinyl-wrap::before{background:radial-gradient(closest-side,rgba(255,255,255,calc(.1 + var(--beat,0)*.25)),transparent 70%)}
+:root[data-skin=moon] .vinyl-wrap::after{background:conic-gradient(from 0deg,transparent 0 70%,rgba(255,255,255,.8) 90%,transparent)}
+:root[data-skin=moon] .toast .bar i{background:#fff}
+:root[data-skin=moon] .spin{border-color:#fff;border-right-color:transparent}
+:root[data-skin=moon] .chip:hover{border-color:rgba(255,255,255,.5)}
+:root[data-skin=moon] .faq summary::after{color:#fff}
+/* thin white slider line with a white dot, like the sketch */
+:root[data-skin=moon] input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(#fff,#fff) 0/var(--p) 100% no-repeat,rgba(255,255,255,.2)}
+:root[data-skin=moon] input[type=range]::-moz-range-track{height:2px;background:rgba(255,255,255,.2)}
+:root[data-skin=moon] input[type=range]::-moz-range-progress{height:2px;background:#fff}
+:root[data-skin=moon] input[type=range]::-webkit-slider-thumb{width:15px;height:15px;margin-top:-6.5px;background:#fff;box-shadow:0 0 0 5px rgba(255,255,255,.08),0 0 14px rgba(255,255,255,.5)}
+:root[data-skin=moon] input[type=range]::-moz-range-thumb{width:15px;height:15px;background:#fff;box-shadow:0 0 0 5px rgba(255,255,255,.08),0 0 14px rgba(255,255,255,.5)}
+:root[data-skin=moon] .ctl.active input[type=range]::-webkit-slider-thumb{box-shadow:0 0 0 9px rgba(255,255,255,.14),0 0 26px #fff}
+@media (min-width:1500px){
+  :root[data-skin=moon] input[type=range]::-webkit-slider-runnable-track{height:2px}
+  :root[data-skin=moon] input[type=range]::-webkit-slider-thumb{width:18px;height:18px;margin-top:-8px}
+}
+/* moon beams light up whatever they cross (--lit is set from the beam positions) */
+:root[data-skin=moon] :is(.btn:not(.hot),.preset:not(.on),.icon-btn,.chip,.tabs button,.track:not(.on),.ctl,.kebab,.pill,.val,.export select,.skin-btn){
+  box-shadow:0 0 calc(var(--lit,0)*28px) rgba(255,255,255,calc(var(--lit,0)*.3)),inset 0 0 0 1px rgba(255,255,255,calc(var(--lit,0)*.4));
+  background-color:rgba(255,255,255,calc(.025 + var(--lit,0)*.09));
+  transition:box-shadow .4s,background-color .4s,border-color .25s,color .2s,transform .3s cubic-bezier(.3,1.5,.4,1)}
+:root[data-skin=moon] .btn.hot{box-shadow:0 0 0 3px rgba(255,255,255,.06),0 0 calc(22px + var(--lit,0)*34px) rgba(255,255,255,calc(.12 + var(--lit,0)*.4));transition:box-shadow .4s,transform .15s}
+:root[data-skin=moon] .play{box-shadow:0 0 0 5px rgba(255,255,255,.06),0 0 calc(36px + var(--lit,0)*40px) rgba(255,255,255,calc(.2 + var(--lit,0)*.4))}
+:root[data-skin=moon] .preset.on,:root[data-skin=moon] .track.on{box-shadow:0 0 0 1px #fff,0 0 calc(24px + var(--lit,0)*30px) rgba(255,255,255,calc(.15 + var(--lit,0)*.35))}
+:root[data-skin=moon] .plus-add::before,:root[data-skin=moon] .plus-add::after{box-shadow:0 0 calc(18px + var(--lit,0)*30px) rgba(255,255,255,calc(.7 + var(--lit,0)*.3))}
+.stage-empty #hubL,.stage-empty #hubR{animation:spin 2.6s linear infinite;transform-box:fill-box;transform-origin:center}
+
+::view-transition-old(root),::view-transition-new(root){animation-duration:.7s;animation-timing-function:cubic-bezier(.3,.7,.2,1)}
+::view-transition-new(root){animation-name:skinIn}
+@keyframes skinIn{from{clip-path:circle(0% at var(--sx,95%) var(--sy,3%))}to{clip-path:circle(150% at var(--sx,95%) var(--sy,3%))}}
+::view-transition-old(root){animation:none}
+
 @media (max-width:1240px){
   .studio{grid-template-columns:270px minmax(0,1fr)}
   .mix{grid-column:2}
@@ -353,6 +483,7 @@ body.dragging .qdrop,body.dragging .stage-empty{animation:breathe 1.2s ease-in-o
 </style>
 </head>
 <body>
+<script>try{var _p=JSON.parse(localStorage.getItem("sw2-prefs")||"{}");if(_p.skin==="moon")document.documentElement.setAttribute("data-skin","moon");}catch(e){}</script>
 <canvas id="aurora" aria-hidden="true"></canvas>
 <div class="grain" aria-hidden="true"></div>
 
@@ -370,6 +501,7 @@ body.dragging .qdrop,body.dragging .stage-empty{animation:breathe 1.2s ease-in-o
       <button data-v="faq">FAQ</button>
     </nav>
     <div class="pill"><i></i>Private: your songs never leave this device</div>
+    <button class="skin-btn" id="skinBtn" title="Switch design" aria-label="Switch design"><span class="sk-a"></span><span class="sk-m"></span></button>
   </header>
 
   <main class="studio" id="studio">
@@ -399,8 +531,11 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">"
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 
 /* ================= prefs ================= */
-const prefs = Object.assign({format:"mp3-320", loop:false, autoplay:true},
+const prefs = Object.assign({format:"mp3-320", loop:false, autoplay:true, skin:"aurora", player:"vinyl"},
   (() => { try { return JSON.parse(localStorage.getItem("sw2-prefs") || "{}"); } catch { return {}; } })());
+const TOK = {c1:"#ff6f9f", c2:"#ffb067", rest:"rgba(255,255,255,.18)"};
+function refreshTok(){ const cs = getComputedStyle(document.documentElement);
+  TOK.c1 = cs.getPropertyValue("--c1").trim() || TOK.c1; TOK.c2 = cs.getPropertyValue("--c2").trim() || TOK.c2; TOK.rest = cs.getPropertyValue("--rest").trim() || TOK.rest; }
 const savePrefs = () => { try { localStorage.setItem("sw2-prefs", JSON.stringify(prefs)); } catch {} };
 
 /* ================= DSP: shared limiter (worklet + export) ================= */
@@ -948,18 +1083,85 @@ function step(dir){
   const was = playing; select(tracks[i]); if (was) play();
 }
 
+/* ================= cassette ================= */
+function mixName(s){
+  const t = [];
+  if (s.speed < 1) t.push("SLOWED"); else if (s.speed > 1) t.push("SPED UP");
+  if (s.reverb > 0) t.push("REVERB"); if (s.bass > 0) t.push("BASS"); if (s.d8 > 0) t.push("8D");
+  return (t.length ? t.slice(0, 3).join(" + ") : "ORIGINAL") + " MIX";
+}
+function cassetteSVG(title, sub){
+  let tt = String(title).toUpperCase(); if (tt.length > 34) tt = tt.slice(0, 33) + "…";
+  const fit = tt.length > 19 ? ' textLength="250" lengthAdjust="spacingAndGlyphs"' : "";
+  const screw = (x, y) => `<g transform="translate(${x} ${y})"><circle r="6" fill="#161616" stroke="#5a5a5a" stroke-width="1"/><path d="M-3.5 0H3.5M0 -3.5V3.5" stroke="#6a6a6a" stroke-width="1.3"/></g>`;
+  const teeth = [0,1,2,3,4,5].map(k => `<rect x="-1.6" y="-8.2" width="3.2" height="3.6" rx=".6" fill="#efefef" transform="rotate(${k*60})"/>`).join("");
+  const hub = id => `<g id="${id}"><circle r="12.5" fill="#f2f2f0" stroke="#bdbdbd" stroke-width=".8"/><circle r="7.6" fill="#0b0b0b"/>${teeth}<circle r="12.5" fill="none" stroke="rgba(0,0,0,.25)" stroke-dasharray="2 4"/></g>`;
+  return `<svg class="cass" viewBox="0 0 320 200" role="img" aria-label="Cassette tape">
+  <defs>
+    <linearGradient id="cShell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2e2e2e"/><stop offset="1" stop-color="#101010"/></linearGradient>
+    <linearGradient id="cPaper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3f1eb"/><stop offset="1" stop-color="#d8d5cc"/></linearGradient>
+    <linearGradient id="cGloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset=".42" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <radialGradient id="cTape"><stop offset=".45" stop-color="#4a3626"/><stop offset=".85" stop-color="#2a1d14"/><stop offset="1" stop-color="#140d09"/></radialGradient>
+    <clipPath id="cWin"><rect x="80" y="57" width="160" height="52" rx="26"/></clipPath>
+  </defs>
+  <rect x="4" y="4" width="312" height="192" rx="14" fill="url(#cShell)" stroke="rgba(255,255,255,.24)"/>
+  <rect x="13" y="13" width="294" height="174" rx="9" fill="none" stroke="rgba(255,255,255,.07)"/>
+  ${screw(20,20)}${screw(300,20)}${screw(20,180)}${screw(300,180)}
+  <rect x="26" y="20" width="268" height="122" rx="6" fill="url(#cPaper)"/>
+  <path d="M40 52H280M40 136H280" stroke="rgba(0,0,0,.07)"/>
+  <text class="lbl-title" x="160" y="44" text-anchor="middle" fill="#141414"${fit}>${esc(tt)}</text>
+  <text class="lbl-small" x="52" y="80" text-anchor="middle" fill="#141414">SIDE</text>
+  <text class="lbl-title" x="52" y="100" text-anchor="middle" fill="#141414">A</text>
+  <text class="lbl-small" x="269" y="80" text-anchor="middle" fill="#141414">YEAR</text>
+  <text class="lbl-title" x="269" y="100" text-anchor="middle" fill="#141414" style="font-size:14px">2026</text>
+  <text class="lbl-small" id="cassSub" x="160" y="131" text-anchor="middle" fill="#141414">${esc(sub)}</text>
+  <rect x="77" y="54" width="166" height="58" rx="29" fill="#080808" stroke="#000" stroke-width="2.5"/>
+  <g clip-path="url(#cWin)">
+    <rect x="80" y="57" width="160" height="52" fill="#15120f"/>
+    <circle id="tapeL" cx="112" cy="83" r="26" fill="url(#cTape)"/>
+    <circle id="tapeR" cx="208" cy="83" r="15" fill="url(#cTape)"/>
+    <rect x="141" y="60" width="38" height="46" rx="3" fill="rgba(255,255,255,.035)" stroke="rgba(255,255,255,.1)"/>
+    <path d="M141 70H179M141 96H179" stroke="rgba(255,255,255,.07)"/>
+  </g>
+  <g transform="translate(112 83)">${hub("hubL")}</g>
+  <g transform="translate(208 83)">${hub("hubR")}</g>
+  <rect x="77" y="54" width="166" height="58" rx="29" fill="url(#cGloss)"/>
+  <path d="M68 196 L84 152 H236 L252 196" fill="#141414" stroke="rgba(255,255,255,.16)"/>
+  <circle cx="104" cy="177" r="6.5" fill="#000" stroke="#3c3c3c"/><circle cx="216" cy="177" r="6.5" fill="#000" stroke="#3c3c3c"/>
+  <rect x="142" y="168" width="11" height="13" rx="2" fill="#000" stroke="#3c3c3c"/><rect x="167" y="168" width="11" height="13" rx="2" fill="#000" stroke="#3c3c3c"/>
+  <path d="M90 192H230" stroke="#3a2a1f" stroke-width="3"/>
+  <rect x="4" y="4" width="312" height="192" rx="14" fill="url(#cGloss)" pointer-events="none"/>
+</svg>`;
+}
+const cassAng = {l:0, r:0};
+function updateCassette(p, dt, speed){
+  const tl = document.getElementById("tapeL"); if (!tl) return;
+  const rMin = 13, rMax = 30, pp = clamp(p || 0, 0, 1);
+  const rl = rMin + (rMax-rMin)*Math.sqrt(1-pp), rr = rMin + (rMax-rMin)*Math.sqrt(pp);
+  tl.setAttribute("r", rl.toFixed(2)); document.getElementById("tapeR").setAttribute("r", rr.toFixed(2));
+  if (dt > 0){
+    const v = 46*speed;                            // tape speed in drawing units/s
+    cassAng.l = (cassAng.l + v/rl*57.3*dt) % 360; cassAng.r = (cassAng.r + v/rr*57.3*dt) % 360;
+  }
+  document.getElementById("hubL").setAttribute("transform", `rotate(${cassAng.l.toFixed(1)})`);
+  document.getElementById("hubR").setAttribute("transform", `rotate(${cassAng.r.toFixed(1)})`);
+}
+
 /* ================= stage (deck + mix) ================= */
 function renderStage(){
   const deck = $("#deck"), mixEl = $("#mix");
   if (!cur){
     deck.classList.remove("playing-deck");
     deck.innerHTML = `<div class="stage-empty" id="emptyDrop">
-      <div class="vinyl-wrap" style="--hue:var(--glow)"><div class="vinyl"><div class="lbl"><span>SW</span></div></div></div>
+      ${prefs.player === "cassette" ? `<div class="cass-wrap">${cassetteSVG("Your song here", "SLOWWAVE MIXES VOL. 1")}</div>` : `<div class="vinyl-wrap" style="--hue:var(--glow)"><div class="vinyl"><div class="lbl"><span>SW</span></div></div></div>`}
+      <button class="plus-add" id="plusAdd" aria-label="Add a song" title="Add a song"><i></i><i></i></button>
       <h1>Make it <em>slowed + reverb.</em></h1>
       <p>Drop a song and shape it live: speed, pitch, reverb, bass and 8D. Every slider changes the music while it plays.</p>
       <button class="btn hot" id="emptyAdd"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Choose songs</button>
       <div class="formats">MP3 · WAV · OGG · M4A · FLAC</div></div>`;
     $("#emptyAdd").onclick = () => $("#fileIn").click();
+    $("#plusAdd").onclick = () => $("#fileIn").click();
+    if (prefs.player === "cassette") updateCassette(0.35, 0);
     mixEl.innerHTML = `<div class="mix-head"><h2 class="h">Mix</h2><span class="live"><i></i>LIVE</span></div>
       <p style="color:var(--muted);margin:0;font-size:14px">The controls appear here once a song is loaded.</p>
       <div class="presets">${PRESETS.map(p => `<button class="preset" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p.ico}</svg>${p.name}</button>`).join("")}</div>`;
@@ -970,7 +1172,9 @@ function renderStage(){
   deck.style.setProperty("--hue", t.hue);
   deck.innerHTML = `
     <div class="deck-head">
-      <div class="vinyl-wrap"><div class="vinyl" id="vinyl"><div class="lbl"><span>${esc(initials)}</span></div></div><div class="tonearm">${I.arm}</div></div>
+      ${prefs.player === "cassette"
+        ? `<div class="cass-wrap">${cassetteSVG(t.name.replace(/\.[^.]+$/, ""), mixName(s))}</div>`
+        : `<div class="vinyl-wrap"><div class="vinyl" id="vinyl"><div class="lbl"><span>${esc(initials)}</span></div></div><div class="tonearm">${I.arm}</div></div>`}
       <div class="info">
         <div class="eyebrow"><span class="eq-ico"><i></i><i></i><i></i></span>Now remixing</div>
         <h1 class="ttl" title="${esc(t.name)}">${esc(t.name.replace(/\.[^.]+$/, ""))}</h1>
@@ -1069,6 +1273,7 @@ function syncControls(){
   const semis = 12*Math.log2(pitchRatio(s));
   const chips = $("#chips");
   if (chips) chips.innerHTML = `<span class="chip"><b>${(+s.speed).toFixed(2)}×</b> tempo</span><span class="chip"><b>${semis >= 0 ? "+" : "−"}${Math.abs(semis).toFixed(1)}</b> st key</span><span class="chip" id="lenChip"></span>`;
+  const csub = document.getElementById("cassSub"); if (csub) csub.textContent = mixName(s);
   renderTimes(); drawWave();
 }
 const fmtT = x => { x = Math.max(0, x); const m = Math.floor(x/60), s = Math.floor(x%60); return m + ":" + String(s).padStart(2, "0"); };
@@ -1078,6 +1283,7 @@ function renderTimes(){
   n.textContent = fmtT(curPos()/cur.s.speed);
   e.textContent = fmtT(cur.buffer.duration/cur.s.speed);
   if (lc) lc.innerHTML = `${fmtT(cur.buffer.duration)} → <b>${fmtT(cur.buffer.duration/cur.s.speed)}</b>`;
+  if (prefs.player === "cassette" && !playing) updateCassette(curPos()/cur.buffer.duration, 0, 0);
 }
 function renderTransport(){
   const b = $("#playBtn"); if (b){ b.innerHTML = playing ? I.pause : I.play; b.setAttribute("aria-label", playing ? "Pause" : "Play"); }
@@ -1103,12 +1309,12 @@ function drawWave(){
   wctx.clearRect(0, 0, W, H);
   const bw = 2*d, gap = 1.5*d, n = Math.floor(W/(bw+gap));
   const frac = previewFrac != null ? previewFrac : curPos()/cur.buffer.duration, pk = cur.peaks;
-  const g = wctx.createLinearGradient(0, 0, W, 0); g.addColorStop(0, "#ff6f9f"); g.addColorStop(1, "#ffb067");
+  const g = wctx.createLinearGradient(0, 0, W, 0); g.addColorStop(0, TOK.c1); g.addColorStop(1, TOK.c2);
   for (let i=0;i<n;i++){
     const a = Math.floor(i/n*pk.length), b = Math.max(a+1, Math.floor((i+1)/n*pk.length));
     let m = 0; for (let j=a;j<b;j++) if (pk[j] > m) m = pk[j];
     const h = Math.max(2*d, Math.pow(m, 0.85)*H*0.92), x = i*(bw+gap), played = i/n < frac;
-    wctx.fillStyle = played ? g : "rgba(255,255,255,.18)";
+    wctx.fillStyle = played ? g : TOK.rest;
     wctx.beginPath(); wctx.roundRect ? wctx.roundRect(x, (H-h)/2, bw, h, bw/2) : wctx.rect(x, (H-h)/2, bw, h); wctx.fill();
   }
   const px = frac*W;
@@ -1145,7 +1351,7 @@ function drawSpec(){
   beat += (Math.pow(bass, 3) - beat)*0.25;
   document.documentElement.style.setProperty("--beat", beat.toFixed(3));
   const gw = W/bars, bw = Math.max(2*d, gw*0.55);
-  const g = sctx.createLinearGradient(0, H, 0, 0); g.addColorStop(0, "rgba(255,111,159,.9)"); g.addColorStop(1, "rgba(255,176,103,.95)");
+  const g = sctx.createLinearGradient(0, H, 0, 0); g.addColorStop(0, TOK.c1); g.addColorStop(1, TOK.c2);
   sctx.fillStyle = g;
   for (let i=0;i<bars;i++){
     const h = Math.max(3*d, smooth[i]*H*0.95), x = i*gw + (gw-bw)/2;
@@ -1162,12 +1368,112 @@ function startLoop(){
   lastT = performance.now();
   const f = now => {
     const dt = (now - lastT)/1000; lastT = now;
-    if (playing && cur){ angle = (angle + dt*cur.s.speed*200) % 360; const v = $("#vinyl"); if (v) v.style.transform = `rotate(${angle}deg)`; }
+    if (playing && cur){ angle = (angle + dt*cur.s.speed*200) % 360; const v = $("#vinyl"); if (v) v.style.transform = `rotate(${angle}deg)`;
+      if (prefs.player === "cassette") updateCassette(curPos()/cur.buffer.duration, dt, cur.s.speed); }
     drawWave(); drawSpec(); renderTimes();
     if (playing || beat > 0.002 || (smooth && smooth.some(x => x > 0.01))) raf = requestAnimationFrame(f); else raf = 0;
   };
   raf = requestAnimationFrame(f);
 }
+
+/* ================= Moon design: moon, moving light beams, sparks ================= */
+const isMoon = () => document.documentElement.getAttribute("data-skin") === "moon";
+const BEAM_ENDS = [[-0.06, 0.40], [-0.06, 0.97], [0.40, 1.06], [0.70, 1.06], [0.93, 1.06]];
+// beams in CSS pixels; constantly swaying, brighter on the kick
+function moonBeams(t, W, H, b){
+  const R = Math.min(W, H)*0.27, mx = W*0.95, my = H*0.02;
+  return BEAM_ENDS.map((e, i) => {
+    const ex = (e[0] + Math.sin(t*0.16 + i*1.7)*0.10)*W, ey = (e[1] + Math.cos(t*0.13 + i*1.1)*0.07)*H;
+    let dx = ex - mx, dy = ey - my; const len = Math.hypot(dx, dy); dx /= len; dy /= len;
+    const sx = mx + dx*R*0.92, sy = my + dy*R*0.92, px = -dy, py = dx;
+    const bend = (0.10 + Math.sin(t*0.22 + i*2.1)*0.09)*len;
+    return {
+      p0:[sx, sy],
+      p1:[sx + (ex-sx)*0.33 + px*bend, sy + (ey-sy)*0.33 + py*bend],
+      p2:[sx + (ex-sx)*0.68 + px*bend*0.55, sy + (ey-sy)*0.68 + py*bend*0.55],
+      p3:[ex, ey],
+      w:(16 + 7*Math.sin(t*0.5 + i*1.9))*(1 + b*0.6),
+      a:clamp(0.11 + 0.06*Math.sin(t*0.7 + i*1.3) + b*0.2, 0.03, 0.5),
+    };
+  });
+}
+const bez = (B, u) => { const v = 1-u, a = v*v*v, b2 = 3*v*v*u, c = 3*v*u*u, d = u*u*u;
+  return [a*B.p0[0] + b2*B.p1[0] + c*B.p2[0] + d*B.p3[0], a*B.p0[1] + b2*B.p1[1] + c*B.p2[1] + d*B.p3[1]]; };
+const CRATERS = [[0.2, 0.62, 0.16], [2.35, 0.55, 0.14], [1.5, 0.3, 0.11], [2.9, 0.78, 0.1], [3.6, 0.45, 0.13], [4.4, 0.68, 0.12], [5.3, 0.4, 0.09], [0.9, 0.82, 0.08]];
+const sparks = Array.from({length:46}, () => ({i:(Math.random()*5)|0, u:Math.random(), v:0.04 + Math.random()*0.08, s:0.6 + Math.random()*1.4}));
+let beamState = [];
+function moonScene(x, t, dt, W, H, b, S){
+  const cw = W/S, chh = H/S, beams = moonBeams(t, cw, chh, b); beamState = beams;
+  const R = Math.min(cw, chh)*0.27*S, mx = W*0.95, my = H*0.02;
+  x.globalCompositeOperation = "lighter"; x.lineCap = "round";
+  // beams: wide soft glow + core
+  beams.forEach(B => {
+    const P = k => [B[k][0]*S, B[k][1]*S];
+    const [a0, a1, a2, a3] = [P("p0"), P("p1"), P("p2"), P("p3")];
+    const path = () => { x.beginPath(); x.moveTo(a0[0], a0[1]); x.bezierCurveTo(a1[0], a1[1], a2[0], a2[1], a3[0], a3[1]); };
+    const g1 = x.createLinearGradient(a0[0], a0[1], a3[0], a3[1]);
+    g1.addColorStop(0, `rgba(255,255,255,${B.a*0.55})`); g1.addColorStop(1, "rgba(255,255,255,0.01)");
+    path(); x.strokeStyle = g1; x.lineWidth = B.w*3.2*S; x.stroke();
+    const g2 = x.createLinearGradient(a0[0], a0[1], a3[0], a3[1]);
+    g2.addColorStop(0, `rgba(255,255,255,${B.a*1.6})`); g2.addColorStop(0.6, `rgba(255,255,255,${B.a*0.7})`); g2.addColorStop(1, `rgba(255,255,255,${B.a*0.25})`);
+    path(); x.strokeStyle = g2; x.lineWidth = B.w*S; x.stroke();
+  });
+  // sparks flying out of the moon along the beams
+  for (const p of sparks){
+    p.u += dt*p.v*(1 + b*4); if (p.u > 1){ p.u = 0; p.i = (Math.random()*5)|0; }
+    const B = beams[p.i], q = bez(B, p.u), r = p.s*S*(2.2 + b*2), al = (1 - p.u)*0.9;
+    const g = x.createRadialGradient(q[0]*S, q[1]*S, 0, q[0]*S, q[1]*S, r*3);
+    g.addColorStop(0, `rgba(255,255,255,${al})`); g.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = g; x.fillRect(q[0]*S - r*3, q[1]*S - r*3, r*6, r*6);
+  }
+  // halo
+  const hr = R*(2.3 + b*0.5), hg = x.createRadialGradient(mx, my, R*0.8, mx, my, hr);
+  hg.addColorStop(0, `rgba(255,255,255,${0.22 + b*0.25})`); hg.addColorStop(1, "rgba(255,255,255,0)");
+  x.fillStyle = hg; x.fillRect(mx - hr, my - hr, hr*2, hr*2);
+  x.globalCompositeOperation = "source-over";
+  // moon body
+  const mg = x.createRadialGradient(mx - R*0.35, my + R*0.35, R*0.1, mx, my, R);
+  mg.addColorStop(0, "#ffffff"); mg.addColorStop(0.65, "#ececea"); mg.addColorStop(1, "#c9c9c6");
+  x.fillStyle = mg; x.beginPath(); x.arc(mx, my, R, 0, Math.PI*2); x.fill();
+  // craters, slowly turning
+  const rot = t*0.02;
+  for (const [ang, dist, cr] of CRATERS){
+    const cx = mx + Math.cos(ang + rot)*dist*R, cy = my + Math.sin(ang + rot)*dist*R, rr = cr*R;
+    const cg = x.createRadialGradient(cx + rr*0.25, cy - rr*0.25, rr*0.1, cx, cy, rr);
+    cg.addColorStop(0, "#8f8f8c"); cg.addColorStop(0.8, "#a2a29f"); cg.addColorStop(1, "#b9b9b6");
+    x.fillStyle = cg; x.beginPath(); x.arc(cx, cy, rr, 0, Math.PI*2); x.fill();
+    x.strokeStyle = "rgba(40,40,40,.45)"; x.lineWidth = Math.max(1, rr*0.09); x.stroke();
+    x.strokeStyle = "rgba(255,255,255,.55)"; x.lineWidth = Math.max(1, rr*0.07);
+    x.beginPath(); x.arc(cx, cy, rr*0.92, Math.PI*0.6, Math.PI*1.25); x.stroke();
+  }
+  // soft terminator shade
+  const sh = x.createRadialGradient(mx + R*0.5, my - R*0.5, R*0.2, mx + R*0.3, my - R*0.3, R*1.3);
+  sh.addColorStop(0, "rgba(0,0,0,.18)"); sh.addColorStop(1, "rgba(0,0,0,0)");
+  x.fillStyle = sh; x.beginPath(); x.arc(mx, my, R, 0, Math.PI*2); x.fill();
+}
+// buttons light up when a beam passes over them
+const LIT_SEL = ".btn,.preset,.icon-btn,.play,.chip,.tabs button,.track,.ctl,.plus-add,.skin-btn,.pill,.val,.kebab,.export select";
+setInterval(() => {
+  const els = document.querySelectorAll(LIT_SEL);
+  if (!isMoon() || !beamState.length){ els.forEach(e => { if (e.style.getPropertyValue("--lit")) e.style.removeProperty("--lit"); }); return; }
+  const pts = beamState.map(B => { const a = []; for (let k=0;k<=28;k++) a.push(bez(B, k/28)); return {a, B}; });
+  els.forEach(el => {
+    const r = el.getBoundingClientRect(); if (!r.width) return;
+    const cx = r.left + r.width/2, cy = r.top + r.height/2, half = Math.min(r.width, r.height)/2;
+    let lit = 0;
+    for (const {a, B} of pts){
+      let d = 1e9;
+      for (let k=0;k<a.length-1;k++){
+        const [x1, y1] = a[k], [x2, y2] = a[k+1], vx = x2-x1, vy = y2-y1, l2 = vx*vx + vy*vy;
+        const u = clamp(((cx-x1)*vx + (cy-y1)*vy)/l2, 0, 1), qx = x1 + vx*u - cx, qy = y1 + vy*u - cy;
+        d = Math.min(d, Math.hypot(qx, qy));
+      }
+      const reach = B.w*2.2 + half;
+      lit = Math.max(lit, Math.exp(-(d*d)/(reach*reach))*clamp(B.a*5, 0.4, 1.2));
+    }
+    el.style.setProperty("--lit", Math.min(1, lit).toFixed(2));
+  });
+}, 90);
 
 /* ================= aurora background (breathes with the bass) ================= */
 (() => {
@@ -1188,8 +1494,9 @@ function startLoop(){
   const draw = now => {
     const t = (now - t0)/1000, dt = Math.min(0.05, (now - last)/1000); last = now;
     const W = c.width, H = c.height, b = +getComputedStyle(document.documentElement).getPropertyValue("--beat") || 0;
+    const moon = isMoon();
     x.globalCompositeOperation = "source-over";
-    x.fillStyle = "#0c0915"; x.fillRect(0, 0, W, H);
+    x.fillStyle = moon ? "#000" : "#0c0915"; x.fillRect(0, 0, W, H);
     // twinkling stars, gently drifting
     for (const s of stars){
       s.y -= dt*0.004*s.z*(1 + b*6); if (s.y < 0){ s.y = 1; s.x = Math.random(); }
@@ -1208,6 +1515,7 @@ function startLoop(){
       x.strokeStyle = g; x.lineWidth = 1.6*S; x.beginPath(); x.moveTo(sx, sy); x.lineTo(sx + len, sy - len/2); x.stroke();
       if (p >= 1) shoot = null;
     }
+    if (moon){ moonScene(x, t, dt, W, H, b, S); if (!reduce) requestAnimationFrame(draw); return; }
     // aurora blobs, swelling on the kick
     x.globalCompositeOperation = "lighter";
     blobs.forEach((o, i) => {
@@ -1358,12 +1666,26 @@ async function renderLibrary(){
 }
 function renderSettings(){
   $("#page").innerHTML = `<h1>Settings</h1><p class="sub">Saved in this browser.</p><div class="set">
+    <div class="row" style="flex-direction:column;align-items:stretch"><span>Design<small>The whole look of the site.</small></span>
+      <div class="pick" id="pSkin">
+        <button data-v="aurora"><span class="pv aurora"></span><b>Aurora</b><small>Night glow in rose and amber</small></button>
+        <button data-v="moon"><span class="pv moon"></span><b>Moon</b><small>Black space, moonlight, white lines</small></button>
+      </div></div>
+    <div class="row" style="flex-direction:column;align-items:stretch"><span>Player<small>What spins while your song plays.</small></span>
+      <div class="pick" id="pPlayer">
+        <button data-v="vinyl"><span class="pv vinylp"><i></i></span><b>Vinyl</b><small>A record that spins with the tempo</small></button>
+        <button data-v="cassette"><span class="pv cassp"><i></i></span><b>Cassette</b><small>A tape whose reels wind as it plays</small></button>
+      </div></div>
     <label class="row" for="sFmt"><span>Export format<small>Used by the Export button and “All”.</small></span><select id="sFmt"><option value="mp3-320">MP3 · 320 kbps</option><option value="mp3-192">MP3 · 192 kbps</option><option value="mp3-128">MP3 · 128 kbps</option><option value="wav">WAV · lossless</option></select></label>
     <div class="row"><span>Play songs as soon as they load</span><button class="toggle" id="sAuto" aria-label="Autoplay"></button></div>
     <div class="row"><span>Loop the current song</span><button class="toggle" id="sLoop" aria-label="Loop"></button></div></div>`;
   const f = $("#sFmt"); f.value = prefs.format; f.onchange = () => { prefs.format = f.value; savePrefs(); };
   const sw = (id, key) => { const el = $(id), upd = () => { el.classList.toggle("on", prefs[key]); el.setAttribute("aria-pressed", prefs[key]); }; upd(); el.onclick = () => { prefs[key] = !prefs[key]; savePrefs(); upd(); if (key === "loop" && player) player.port.postMessage({loop:prefs.loop}); }; };
   sw("#sAuto", "autoplay"); sw("#sLoop", "loop");
+  const pick = (id, key, fn) => { const box = $(id), upd = () => box.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === prefs[key]));
+    upd(); box.onclick = e => { const b = e.target.closest("button"); if (!b) return; fn(b.dataset.v, b); upd(); }; };
+  pick("#pSkin", "skin", (v, b) => { setSkin(v, b); setTimeout(() => { if (view === "settings") renderSettings(); }, 120); });
+  pick("#pPlayer", "player", v => { prefs.player = v; savePrefs(); renderStage(); });
 }
 function renderFaq(){
   const qa = [
@@ -1418,6 +1740,23 @@ document.addEventListener("pointerdown", e => {
   if (getComputedStyle(b).overflow !== "hidden") s.style.width = "100%";
   b.appendChild(s); setTimeout(() => s.remove(), 700);
 });
+
+/* ================= design switching ================= */
+function setSkin(v, fromEl){
+  if (v === prefs.skin) return;
+  const apply = () => {
+    prefs.skin = v; prefs.player = v === "moon" ? "cassette" : "vinyl"; savePrefs();
+    if (v === "moon") document.documentElement.setAttribute("data-skin", "moon"); else document.documentElement.removeAttribute("data-skin");
+    document.querySelector('meta[name="theme-color"]').content = v === "moon" ? "#000000" : "#0c0915";
+    refreshTok(); renderStage(); renderList(); moveTabInd();
+  };
+  if (fromEl){ const r = fromEl.getBoundingClientRect();
+    document.documentElement.style.setProperty("--sx", (r.left + r.width/2)/innerWidth*100 + "%");
+    document.documentElement.style.setProperty("--sy", (r.top + r.height/2)/innerHeight*100 + "%"); }
+  if (document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) document.startViewTransition(apply); else apply();
+}
+$("#skinBtn").onclick = e => setSkin(prefs.skin === "moon" ? "aurora" : "moon", e.currentTarget);
+refreshTok();
 
 renderList(); renderStage(); moveTabInd();
 restoreSession();
