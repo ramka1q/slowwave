@@ -485,7 +485,6 @@ body.dragging .qdrop,body.dragging .stage-empty{animation:breathe 1.2s ease-in-o
   .deck{padding:16px}
   .page{padding:18px 4px}
 }
-@media (prefers-reduced-motion:reduce){*{animation-duration:0s!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -1485,12 +1484,16 @@ let rayState = null;   // CSS-pixel geometry, used to light up buttons
 
 function moonGeom(W, H){ const R = Math.max(110, Math.min(W, H)*0.2); return {R, cx:W - R*0.28, cy:R*0.12}; }
 function rayAt(r, t, b){
-  const ang = r.base + Math.sin(t*0.06 + r.ph)*r.sw + Math.sin(t*0.031)*0.05;
-  const fl = 0.5 + 0.5*Math.sin(t*r.sp + r.ph);
+  const ang = r.base + Math.sin(t*0.28 + r.ph)*r.sw*2.4 + Math.sin(t*0.13 + r.ph*0.5)*0.035 + Math.sin(t*0.09)*0.11;
+  const fl = 0.5 + 0.5*Math.sin(t*(0.35 + r.sp*2.5) + r.ph);
   return {ang, w:r.w*(0.85 + 0.3*fl), a:r.a*(0.25 + 0.75*fl*fl) + b*0.12};
 }
 function moonScene(x, t, dt, W, H, b, S){
-  const cw = W/S, chh = H/S, m = moonGeom(cw, chh), cx = m.cx*S, cy = m.cy*S, R = m.R*S;
+  const cw = W/S, chh = H/S, m = moonGeom(cw, chh);
+  // the moon floats and sways a little
+  const fx = Math.cos(t*0.37)*m.R*0.05, fy = Math.sin(t*0.5)*m.R*0.07, rotDeg = Math.sin(t*0.21)*5;
+  m.cx += fx; m.cy += fy;
+  const cx = m.cx*S, cy = m.cy*S, R = m.R*S;
   const L = Math.hypot(W, H)*1.15;
   const rays = RAYS.map(r => rayAt(r, t, b));
   rayState = {cx:m.cx, cy:m.cy, R:m.R, L:L/S, rays};
@@ -1524,13 +1527,13 @@ function moonScene(x, t, dt, W, H, b, S){
   }
   // tight corona
   g = x.createRadialGradient(cx, cy, R*0.95, cx, cy, R*1.7);
-  g.addColorStop(0, `rgba(255,255,250,${0.38 + b*0.25})`); g.addColorStop(1, "rgba(255,255,250,0)");
+  g.addColorStop(0, `rgba(255,255,250,${0.32 + Math.sin(t*0.8)*0.08 + b*0.25})`); g.addColorStop(1, "rgba(255,255,250,0)");
   x.fillStyle = g; x.beginPath(); x.arc(cx, cy, R*1.7, 0, Math.PI*2); x.fill();
   x.globalCompositeOperation = "source-over";
   // the moon itself is a separate crisp element; just place it
-  const st = MOON_TEX.style, key = `${m.cx|0},${m.cy|0},${m.R|0}`;
-  if (MOON_TEX._k !== key){ MOON_TEX._k = key; st.left = (m.cx - m.R) + "px"; st.top = (m.cy - m.R) + "px"; st.width = st.height = (m.R*2) + "px"; }
-  st.transform = `scale(${(1 + b*0.015).toFixed(4)})`;
+  const st = MOON_TEX.style, bx = m.cx - fx, by = m.cy - fy, key = `${bx|0},${by|0},${m.R|0}`;
+  if (MOON_TEX._k !== key){ MOON_TEX._k = key; st.left = (bx - m.R) + "px"; st.top = (by - m.R) + "px"; st.width = st.height = (m.R*2) + "px"; }
+  st.transform = `translate(${fx.toFixed(2)}px,${fy.toFixed(2)}px) rotate(${rotDeg.toFixed(2)}deg) scale(${(1 + b*0.02 + Math.sin(t*0.8)*0.006).toFixed(4)})`;
 }
 
 // buttons light up while a shaft crosses them
@@ -1558,7 +1561,7 @@ setInterval(() => {
     {h:"255,176,103", r:.45, sx:.09, sy:.06, px:.75, py:.9},
     {h:"94,224,184",  r:.35, sx:.06, sy:.09, px:.2,  py:.95},
   ];
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = false; // the owner wants the motion on, even with Windows animations turned off
   let S = isMoon() ? 0.5 : 0.6;
   const fit = () => { c.width = Math.round(innerWidth*S); c.height = Math.round(innerHeight*S); };
   fit(); addEventListener("resize", fit);
@@ -1828,7 +1831,7 @@ function setSkin(v, fromEl){
   if (fromEl){ const r = fromEl.getBoundingClientRect();
     document.documentElement.style.setProperty("--sx", (r.left + r.width/2)/innerWidth*100 + "%");
     document.documentElement.style.setProperty("--sy", (r.top + r.height/2)/innerHeight*100 + "%"); }
-  if (document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) document.startViewTransition(apply); else apply();
+  if (document.startViewTransition) document.startViewTransition(apply); else apply();
 }
 $("#skinBtn").onclick = e => setSkin(prefs.skin === "moon" ? "aurora" : "moon", e.currentTarget);
 refreshTok();
