@@ -688,20 +688,22 @@ const SAT = satCurve();
 function buildFx(ctx, live){
   const n = {};
   n.input = ctx.createGain();
-  n.hp = ctx.createBiquadFilter(); n.hp.type = "highpass"; n.hp.frequency.value = 24; n.hp.Q.value = 0.7;
-  n.shelf = ctx.createBiquadFilter(); n.shelf.type = "lowshelf"; n.shelf.frequency.value = 95;
-  n.sub = ctx.createBiquadFilter(); n.sub.type = "peaking"; n.sub.frequency.value = 52; n.sub.Q.value = 1.1;
-  n.mud = ctx.createBiquadFilter(); n.mud.type = "peaking"; n.mud.frequency.value = 280; n.mud.Q.value = 0.9;
-  n.satLP = ctx.createBiquadFilter(); n.satLP.type = "lowpass"; n.satLP.frequency.value = 150; n.satLP.Q.value = 0.6;
-  n.shaper = ctx.createWaveShaper(); n.shaper.curve = SAT; n.shaper.oversample = "2x";
-  n.sat = ctx.createGain(); n.sat.gain.value = 0;
+  // Bass boost: 3-band split, low band (below 160 Hz) raised 0..+10 dB, bands summed back.
+  const bq = (type, f) => { const q = ctx.createBiquadFilter(); q.type = type; q.frequency.value = f; return q; };
+  n.lp160 = bq("lowpass", 160); n.lowGain = ctx.createGain();
+  n.hp160 = bq("highpass", 160); n.lp2500 = bq("lowpass", 2500);
+  n.hp2500 = bq("highpass", 2500);
+  n.bands = ctx.createGain(); n.bands.gain.value = 0;   // used while bass boost > 0
+  n.flat = ctx.createGain();                            // untouched path while bass boost = 0
   n.sum = ctx.createGain();
   n.pan = ctx.createStereoPanner();
   n.lfo = ctx.createOscillator(); n.lfo.frequency.value = 0.12; n.depth = ctx.createGain(); n.depth.gain.value = 0;
   n.lfo.connect(n.depth); n.depth.connect(n.pan.pan); n.lfo.start();
   n.pre = ctx.createGain();
-  n.input.connect(n.hp); n.hp.connect(n.shelf); n.shelf.connect(n.sub); n.sub.connect(n.mud); n.mud.connect(n.sum);
-  n.hp.connect(n.satLP); n.satLP.connect(n.shaper); n.shaper.connect(n.sat); n.sat.connect(n.sum);
+  n.input.connect(n.lp160); n.lp160.connect(n.lowGain); n.lowGain.connect(n.bands);
+  n.input.connect(n.hp160); n.hp160.connect(n.lp2500); n.lp2500.connect(n.bands);
+  n.input.connect(n.hp2500); n.hp2500.connect(n.bands);
+  n.bands.connect(n.sum); n.input.connect(n.flat); n.flat.connect(n.sum);
   n.sum.connect(n.pan); n.pan.connect(n.pre);
   if (live){
     n.dry = ctx.createGain(); n.wet = ctx.createGain(); n.master = ctx.createGain();
@@ -718,14 +720,14 @@ function buildFx(ctx, live){
 // 0–100% = plain gain; 100–200% pushes up to 3× (+9.5 dB) into the soft limiter
 const volGain = v => v <= 100 ? v/100 : 1 + (v-100)/100*2;
 const mix = s => {
-  const bz = s.bass/100, rv = s.reverb/100;
-  return {shelf:10*bz, sub:4.5*bz, mud:-3.5*bz, sat:0.6*bz, depth:(s.d8/100)*0.9,
-          dry:1 - 0.22*rv, wet:1.45*rv, master:volGain(s.volume)*Math.pow(10, -5.5*bz/20), drive:clamp((s.volume-100)/100, 0, 1)};
+  const rv = s.reverb/100, bassOn = s.bass > 0;
+  return {bassOn, lowG:Math.pow(10, (s.bass/10)/20), depth:(s.d8/100)*0.9,
+          dry:1 - 0.22*rv, wet:1.45*rv, master:volGain(s.volume), drive:clamp((s.volume-100)/100, 0, 1)};
 };
 function applyFx(n, s, ctx, now){
   const m = mix(s), t = ctx.currentTime;
   const set = (p, v) => { if (now) { p.cancelScheduledValues(0); p.value = v; } else p.setTargetAtTime(v, t, 0.025); };
-  set(n.shelf.gain, m.shelf); set(n.sub.gain, m.sub); set(n.mud.gain, m.mud); set(n.sat.gain, m.sat); set(n.depth.gain, m.depth);
+  set(n.lowGain.gain, m.lowG); set(n.bands.gain, m.bassOn ? 1 : 0); set(n.flat.gain, m.bassOn ? 0 : 1); set(n.depth.gain, m.depth);
   if (n.dry){ set(n.dry.gain, m.dry); set(n.wet.gain, m.wet); set(n.master.gain, m.master); }
   if (n.lim && n.lim.port && n.lastDrive !== m.drive){ n.lastDrive = m.drive; n.lim.port.postMessage({drive:m.drive}); }
 }
@@ -871,36 +873,20 @@ function runBiq(x, c, out){
 }
 function jsEQ(L, R, s, sr){
   const m = mix(s);
-  const hp = biq("highpass", 24, 0.7, 0, sr), sh = biq("lowshelf", 95, 0, m.shelf, sr), sb = biq("peaking", 52, 1.1, m.sub, sr),
-        md = biq("peaking", 280, 0.9, m.mud, sr), lp = biq("lowpass", 150, 0.6, 0, sr);
-  const n = SAT.length - 1, useSat = m.sat > 0, useEq = !!(m.shelf || m.sub || m.mud), sg = m.sat;
-  // one pass per channel, all filters inline (Direct Form I state per stage)
-  const st = cs => cs.map(c => ({c, x1:0, x2:0, y1:0, y2:0}));
-  for (const ch of [L, R]){
-    const [h, s1, s2, s3, p] = st([hp, sh, sb, md, lp]);
-    const H0=h.c[0],H1=h.c[1],H2=h.c[2],H3=h.c[3],H4=h.c[4];
-    const A0=s1.c[0],A1=s1.c[1],A2=s1.c[2],A3=s1.c[3],A4=s1.c[4];
-    const B0=s2.c[0],B1=s2.c[1],B2=s2.c[2],B3=s2.c[3],B4=s2.c[4];
-    const C0=s3.c[0],C1=s3.c[1],C2=s3.c[2],C3=s3.c[3],C4=s3.c[4];
-    const P0=p.c[0],P1=p.c[1],P2=p.c[2],P3=p.c[3],P4=p.c[4];
-    let hx1=0,hx2=0,hy1=0,hy2=0, ax1=0,ax2=0,ay1=0,ay2=0, bx1=0,bx2=0,by1=0,by2=0, cx1=0,cx2=0,cy1=0,cy2=0, px1=0,px2=0,py1=0,py2=0;
-    for (let i=0;i<ch.length;i++){
-      const v = ch[i];
-      const y = H0*v + H1*hx1 + H2*hx2 - H3*hy1 - H4*hy2; hx2=hx1; hx1=v; hy2=hy1; hy1=y;
-      let out = y;
-      if (useEq){
-        const a = A0*y + A1*ax1 + A2*ax2 - A3*ay1 - A4*ay2; ax2=ax1; ax1=y; ay2=ay1; ay1=a;
-        const b = B0*a + B1*bx1 + B2*bx2 - B3*by1 - B4*by2; bx2=bx1; bx1=a; by2=by1; by1=b;
-        const c = C0*b + C1*cx1 + C2*cx2 - C3*cy1 - C4*cy2; cx2=cx1; cx1=b; cy2=cy1; cy1=c;
-        out = c;
+  if (m.bassOn){
+    // same 3-band split as the live chain (Web Audio default Q = 1)
+    const c1 = biq("lowpass", 160, 1, 0, sr), c2 = biq("highpass", 160, 1, 0, sr), c3 = biq("lowpass", 2500, 1, 0, sr), c4 = biq("highpass", 2500, 1, 0, sr), g = m.lowG;
+    for (const ch of [L, R]){
+      let a1=0,a2=0,ay1=0,ay2=0, b1=0,b2=0,by1=0,by2=0, c1x=0,c2x=0,cy1=0,cy2=0, d1=0,d2=0,dy1=0,dy2=0;
+      const [A0,A1,A2,A3,A4] = c1, [B0,B1,B2,B3,B4] = c2, [C0,C1,C2,C3,C4] = c3, [D0,D1,D2,D3,D4] = c4;
+      for (let i=0;i<ch.length;i++){
+        const v = ch[i];
+        const lo = A0*v + A1*a1 + A2*a2 - A3*ay1 - A4*ay2; a2=a1; a1=v; ay2=ay1; ay1=lo;
+        const h1 = B0*v + B1*b1 + B2*b2 - B3*by1 - B4*by2; b2=b1; b1=v; by2=by1; by1=h1;
+        const mi = C0*h1 + C1*c1x + C2*c2x - C3*cy1 - C4*cy2; c2x=c1x; c1x=h1; cy2=cy1; cy1=mi;
+        const hi = D0*v + D1*d1 + D2*d2 - D3*dy1 - D4*dy2; d2=d1; d1=v; dy2=dy1; dy1=hi;
+        ch[i] = lo*g + mi + hi;
       }
-      if (useSat){
-        const q = P0*y + P1*px1 + P2*px2 - P3*py1 - P4*py2; px2=px1; px1=y; py2=py1; py1=q;
-        let pp = (q+1)*0.5*n; if (pp < 0) pp = 0; else if (pp > n) pp = n;
-        const i0 = pp >= n ? n-1 : pp|0, f = pp - i0;
-        out += (SAT[i0] + (SAT[i0+1]-SAT[i0])*f)*sg;
-      }
-      ch[i] = out;
     }
   }
   if (m.depth > 0){
@@ -1770,7 +1756,7 @@ function renderFaq(){
     ["Are my songs uploaded anywhere?", "No. All processing happens inside your browser. Files never leave your device, and there is no account or limit."],
     ["How do I make a slowed + reverb song?", "Add a song, tap the Slowed + Reverb preset, then Export. Fine-tune Speed (around 0.8×) and Reverb (40–60%) while it plays."],
     ["What does Keep key do?", "Normally speed changes the key too, like a record player. Switch on Keep key to set tempo and pitch separately: for example 0.85× speed in the original key, or the original speed 2 semitones lower."],
-    ["Why does the bass sound clean?", "Bass boost is a sub shelf plus gentle harmonic warmth, with a cut in the muddy 280 Hz area. Reverb is kept off the low end, and a look-ahead limiter stops clipping without pumping."],
+    ["How does Bass boost work?", "The song is split into lows (below 160 Hz), mids and highs. The slider raises only the lows, from 0 to +10 dB, then the three parts are joined again. At 0% the song is untouched."],
     ["What is 8D?", "The song slowly circles around your head. Use headphones."],
     ["Which formats can I export?", "MP3 at 128, 192 or 320 kbps, or lossless WAV. What you hear in the Studio is what you get in the file."],
     ["Shortcuts", "Space plays and pauses. ← and → jump 5 seconds. Double-click a slider to reset it, or click its value to type an exact number."],
