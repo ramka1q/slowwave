@@ -36,7 +36,7 @@ button{cursor:pointer}
 .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .shell{position:relative;z-index:2;min-height:100%;display:flex;flex-direction:column;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 18px;gap:14px;max-width:1500px;margin:0 auto}
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 18px;gap:14px;max-width:2400px;margin:0 auto}
 
 /* top bar */
 .top{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
@@ -52,7 +52,7 @@ button{cursor:pointer}
 .pill i{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint)}
 
 /* layout */
-.studio{display:grid;grid-template-columns:290px minmax(0,1fr) 370px;gap:14px;flex:1;min-height:0}
+.studio{display:grid;grid-template-columns:clamp(260px,17vw,330px) minmax(0,1fr) clamp(380px,36vw,720px);gap:14px;flex:1;min-height:0}
 .panel{background:var(--glass);border:1px solid var(--edge);border-radius:var(--r);backdrop-filter:blur(26px) saturate(140%);-webkit-backdrop-filter:blur(26px) saturate(140%);box-shadow:0 20px 60px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05);min-width:0}
 h2.h{font:700 13px/1 var(--display);letter-spacing:.6px;text-transform:uppercase;margin:0;color:var(--fg);display:flex;align-items:center;gap:8px}
 .count{font:600 11px/1 var(--mono);color:var(--ink);background:var(--fg);border-radius:999px;padding:3px 7px;letter-spacing:0}
@@ -139,7 +139,17 @@ body.dragging .qdrop,body.dragging .stage-empty{border-color:var(--rose);color:v
 .formats{font:500 12px/1 var(--mono);color:var(--dim)}
 
 /* mix */
-.mix{padding:18px;display:flex;flex-direction:column;gap:16px;overflow:auto}
+.mix{padding:20px 22px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;overflow-x:hidden}
+@media (min-width:1650px){.mix .presets{grid-template-columns:repeat(6,1fr)}}
+@media (min-width:1500px){
+  .ctl{padding:14px 14px 12px}
+  .ctl-top label{font-size:15px}
+  .val{font-size:14.5px;width:92px}
+  input[type=range]{height:30px}
+  input[type=range]::-webkit-slider-runnable-track{height:8px}
+  input[type=range]::-webkit-slider-thumb{width:22px;height:22px;margin-top:-7px}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px}
+}
 .mix-head{display:flex;justify-content:space-between;align-items:center}
 .live{font:600 11px/1 var(--mono);color:var(--mint);display:flex;align-items:center;gap:6px;letter-spacing:1px}
 .live i{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint);animation:pulse 1.6s ease-in-out infinite}
@@ -400,12 +410,16 @@ class Limiter{
     this.ceil=Math.pow(10,-1/20); this.L=Math.max(8,Math.round(sr*0.006));
     this.bl=new Float32Array(this.L); this.br=new Float32Array(this.L); this.bi=0;
     this.cap=this.L+2; this.qv=new Float32Array(this.cap); this.qt=new Float64Array(this.cap); this.h=0; this.n=0; this.t=0;
-    this.g=1; this.att=1-Math.exp(-3/this.L); this.rel=1-Math.exp(-1/(sr*0.18));
+    this.g=1; this.att=1-Math.exp(-3/this.L); this.sr=sr; this.setDrive(0);
   }
+  // drive 0..1 (volume above 100%): faster release + soft saturation = really louder, not just limited
+  setDrive(d){ this.d=d; this.rel=1-Math.exp(-1/(this.sr*(0.18-0.14*d))); this.k=this.ceil*(1-0.5*d); }
+  sc(v){ const k=this.k,c=this.ceil,av=v<0?-v:v; if(av<=k) return v; const y=k+(c-k)*Math.tanh((av-k)/(c-k)); return v<0?-y:y; }
   process(l,r,from,to){
-    const c=this.ceil,cap=this.cap,L=this.L;
+    const c=this.ceil,cap=this.cap,L=this.L,sat=this.d>0;
     for(let i=from;i<to;i++){
-      const a=l[i],b=r[i],x=Math.max(a<0?-a:a,b<0?-b:b),req=x>c?c/x:1;
+      let a=l[i],b=r[i]; if(sat){a=this.sc(a);b=this.sc(b);}
+      const x=Math.max(a<0?-a:a,b<0?-b:b),req=x>c?c/x:1;
       while(this.n>0){const bk=(this.h+this.n-1)%cap; if(this.qv[bk]>=req)this.n--; else break;}
       const p=(this.h+this.n)%cap; this.qv[p]=req; this.qt[p]=this.t; this.n++;
       while(this.qt[this.h]<=this.t-L){this.h=(this.h+1)%cap;this.n--;}
@@ -478,7 +492,7 @@ class PlayerProc extends AudioWorkletProcessor{
 }
 registerProcessor("sw-player",PlayerProc);
 class LimProc extends AudioWorkletProcessor{
-  constructor(){super(); this.lim=new Limiter(sampleRate);}
+  constructor(){super(); this.lim=new Limiter(sampleRate); this.port.onmessage=e=>{ if(e.data.drive!=null) this.lim.setDrive(e.data.drive); };}
   process(ins,outs){
     const i=ins[0],o=outs[0],n=o[0].length;
     if(!i||!i.length){o[0].fill(0);o[1]&&o[1].fill(0);}
@@ -557,16 +571,19 @@ function buildFx(ctx, live){
   }
   return n;
 }
+// 0–100% = plain gain; 100–200% pushes up to 3× (+9.5 dB) into the soft limiter
+const volGain = v => v <= 100 ? v/100 : 1 + (v-100)/100*2;
 const mix = s => {
   const bz = s.bass/100, rv = s.reverb/100;
   return {shelf:10*bz, sub:4.5*bz, mud:-3.5*bz, sat:0.6*bz, depth:(s.d8/100)*0.9,
-          dry:1 - 0.22*rv, wet:1.45*rv, master:(s.volume/100)*Math.pow(10, -5.5*bz/20)};
+          dry:1 - 0.22*rv, wet:1.45*rv, master:volGain(s.volume)*Math.pow(10, -5.5*bz/20), drive:clamp((s.volume-100)/100, 0, 1)};
 };
 function applyFx(n, s, ctx, now){
   const m = mix(s), t = ctx.currentTime;
   const set = (p, v) => { if (now) { p.cancelScheduledValues(0); p.value = v; } else p.setTargetAtTime(v, t, 0.025); };
   set(n.shelf.gain, m.shelf); set(n.sub.gain, m.sub); set(n.mud.gain, m.mud); set(n.sat.gain, m.sat); set(n.depth.gain, m.depth);
   if (n.dry){ set(n.dry.gain, m.dry); set(n.wet.gain, m.wet); set(n.master.gain, m.master); }
+  if (n.lim && n.lim.port && n.lastDrive !== m.drive){ n.lastDrive = m.drive; n.lim.port.postMessage({drive:m.drive}); }
 }
 const pitchRatio = s => s.pitchOn ? Math.pow(2, s.pitch/12) : s.speed;
 function applyPlayer(node, s, ctx, now){
@@ -603,7 +620,7 @@ const PRESETS = [
 const HUES = ["linear-gradient(135deg,#ff6f9f,#ffb067)","linear-gradient(135deg,#9d7bff,#ff6f9f)","linear-gradient(135deg,#5ee0b8,#9d7bff)","linear-gradient(135deg,#ffb067,#ffe08a)","linear-gradient(135deg,#6fb7ff,#9d7bff)","linear-gradient(135deg,#ff8f6f,#ff6fd8)"];
 
 const tracks = [];
-let cur = null, playing = false, player = null, playerTrack = null, lastMsgT = 0, uid = 1;
+let cur = null, playing = false, player = null, playerTrack = null, lastMsgT = 0, uid = Date.now();
 
 function curPos(){
   if (!cur) return 0;
@@ -648,14 +665,14 @@ function pause(){
   if (!cur) return;
   cur.pos = curPos(); playing = false;
   if (player) player.port.postMessage({play:false});
-  renderTransport(); drawWave();
+  renderTransport(); drawWave(); saveState();
 }
 const toggle = () => playing ? pause() : play();
 function seek(sec){
   if (!cur) return;
   cur.pos = clamp(sec, 0, cur.buffer.duration); lastMsgT = performance.now();
   if (player && playerTrack === cur) player.port.postMessage({seek:cur.pos});
-  drawWave(); renderTimes();
+  drawWave(); renderTimes(); saveState();
 }
 
 /* ================= files ================= */
@@ -669,12 +686,12 @@ async function addFiles(files, settings){
     try {
       const buffer = await ac.decodeAudioData((await f.arrayBuffer()).slice(0));
       const t = {id:uid++, name:f.name, file:f, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), settings || {}), pos:0, hue:HUES[(uid) % HUES.length]};
-      tracks.push(t); if (!first) first = t;
+      tracks.push(t); storeFile(t); if (!first) first = t;
     } catch { toast(`Could not read ${esc(f.name)}. It may be damaged or in a format your browser cannot open.`, 4000); await new Promise(r => setTimeout(r, 1400)); }
   }
   hideToast();
   if (first){ select(first); if (prefs.autoplay) play(); }
-  renderList(true);
+  renderList(true); persistQueue();
 }
 function peaksOf(b){
   const n = 2400, d0 = b.getChannelData(0), d1 = b.numberOfChannels > 1 ? b.getChannelData(1) : d0;
@@ -797,6 +814,7 @@ async function renderTrack(t, onStage){
   }
   onStage && onStage("Mastering", 0.6);
   for (let i=0;i<outLen;i++){ L[i] *= m.master; R[i] *= m.master; }
+  lim.setDrive(m.drive);
   lim.process(L, R, 0, outLen + lat);
   let end = outLen;
   while (end > 1 && Math.abs(L[end-1+lat]) < 1e-4 && Math.abs(R[end-1+lat]) < 1e-4) end--;
@@ -905,7 +923,7 @@ $("#tracks").addEventListener("click", e => {
   if (m){ e.stopPropagation(); const t = tracks.find(x => x.id == m.dataset.menu); openMenu(m, [
       ["Export MP3 320", () => exportTrack(t, "mp3-320")], ["Export WAV", () => exportTrack(t, "wav")],
       ["Save to library", () => addToLibrary(t)],
-      ["Duplicate", () => { const c = Object.assign({}, t, {id:uid++, s:Object.assign({}, t.s), pos:0, hue:HUES[uid % HUES.length]}); tracks.splice(tracks.indexOf(t)+1, 0, c); renderList(); }],
+      ["Duplicate", () => { const c = Object.assign({}, t, {id:uid++, s:Object.assign({}, t.s), pos:0, hue:HUES[uid % HUES.length]}); tracks.splice(tracks.indexOf(t)+1, 0, c); storeFile(c); renderList(true); persistQueue(); }],
       "-", ["Remove", () => removeTrack(t), "danger"]]); return; }
   const row = e.target.closest(".track"); if (!row) return;
   const t = tracks.find(x => x.id == row.dataset.id); if (t && t !== cur){ const was = playing; select(t); if (was) play(); }
@@ -913,7 +931,7 @@ $("#tracks").addEventListener("click", e => {
 function removeTrack(t){
   const i = tracks.indexOf(t); if (i < 0) return;
   if (t === cur){ pause(); destroyPlayer(); cur = null; }
-  tracks.splice(i, 1);
+  tracks.splice(i, 1); dropFile(t.id); persistQueue();
   if (!cur && tracks.length) select(tracks[Math.min(i, tracks.length-1)]);
   renderList(); if (!cur) renderStage();
 }
@@ -922,6 +940,7 @@ function select(t){
   if (playerTrack !== t) destroyPlayer();
   cur = t; renderList(); renderStage();
   if (fx) applyFx(fx, t.s, ac, true);
+  persistQueue();
 }
 function step(dir){
   if (!cur || tracks.length < 2) return;
@@ -1020,7 +1039,7 @@ function liveApply(){
   const t = cur;
   if (fx) applyFx(fx, t.s, ac, false);
   if (player && playerTrack === t) applyPlayer(player, t.s, ac, false);
-  syncControls(); renderListSoon();
+  syncControls(); renderListSoon(); persistQueue();
 }
 let listT = 0; const renderListSoon = () => { clearTimeout(listT); listT = setTimeout(renderList, 120); };
 function applyPreset(id){
@@ -1241,8 +1260,69 @@ const toastProgress = (txt, p) => toast(`<span class="spin"></span>${esc(txt)}<s
 function hideToast(){ if (toastEl) toastEl.hidden = true; }
 
 /* ================= library (IndexedDB, this browser) ================= */
-function idb(){ return new Promise((res, rej) => { const r = indexedDB.open("slowwave", 1); r.onupgradeneeded = () => r.result.createObjectStore("lib", {keyPath:"id", autoIncrement:true}); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
-async function libOp(mode, fn){ const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction("lib", mode); const out = fn(tx.objectStore("lib")); tx.oncomplete = () => res(out && out.result); tx.onerror = () => rej(tx.error); }); }
+let dbP = null;
+function idb(){
+  return dbP || (dbP = new Promise((res, rej) => {
+    const r = indexedDB.open("slowwave", 2);
+    r.onupgradeneeded = () => { const d = r.result;
+      if (!d.objectStoreNames.contains("lib")) d.createObjectStore("lib", {keyPath:"id", autoIncrement:true});
+      if (!d.objectStoreNames.contains("queue")) d.createObjectStore("queue", {keyPath:"id"});
+      if (!d.objectStoreNames.contains("files")) d.createObjectStore("files", {keyPath:"id"}); };
+    r.onsuccess = () => res(r.result); r.onerror = () => { dbP = null; rej(r.error); };
+  }));
+}
+async function dbOp(store, mode, fn){ const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction(store, mode); const out = fn(tx.objectStore(store)); tx.oncomplete = () => res(out && out.result); tx.onerror = () => rej(tx.error); }); }
+const libOp = (mode, fn) => dbOp("lib", mode, fn);
+
+/* ================= remember everything between visits ================= */
+let persistT = 0, restoring = false;
+function persistQueue(){
+  if (restoring) return;
+  clearTimeout(persistT);
+  persistT = setTimeout(() => {
+    const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t.pos}));
+    dbOp("queue", "readwrite", st => { st.clear(); recs.forEach(r => st.put(r)); }).catch(() => {});
+  }, 350);
+  saveState();
+}
+const storeFile = t => dbOp("files", "readwrite", st => st.put({id:t.id, file:t.file})).catch(() => {});
+const dropFile = id => dbOp("files", "readwrite", st => st.delete(id)).catch(() => {});
+function saveState(){
+  try { localStorage.setItem("sw2-state", JSON.stringify({curId:cur ? cur.id : null, pos:cur ? curPos() : 0})); } catch {}
+}
+addEventListener("pagehide", () => { if (cur) cur.pos = curPos(); saveState(); persistQueueNow(); });
+document.addEventListener("visibilitychange", () => { if (document.hidden){ saveState(); persistQueueNow(); } });
+function persistQueueNow(){
+  if (restoring) return; clearTimeout(persistT);
+  const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t === cur ? curPos() : t.pos}));
+  dbOp("queue", "readwrite", st => { st.clear(); recs.forEach(r => st.put(r)); }).catch(() => {});
+}
+setInterval(() => { if (playing) saveState(); }, 2000);
+async function restoreSession(){
+  let recs = [];
+  try { recs = await dbOp("queue", "readonly", st => st.getAll()) || []; } catch { return; }
+  if (!recs.length) return;
+  restoring = true;
+  recs.sort((a, b) => a.order - b.order);
+  let state = {}; try { state = JSON.parse(localStorage.getItem("sw2-state") || "{}"); } catch {}
+  await ensureCtx();
+  for (let i=0;i<recs.length;i++){
+    const r = recs[i];
+    toastProgress(`Restoring your songs (${i+1}/${recs.length})`, i/recs.length);
+    try {
+      const f = await dbOp("files", "readonly", st => st.get(r.id)); if (!f || !f.file) continue;
+      const buffer = await ac.decodeAudioData((await f.file.arrayBuffer()).slice(0));
+      tracks.push({id:r.id, name:r.name, file:f.file, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), r.s), pos:clamp(r.pos || 0, 0, buffer.duration), hue:r.hue || HUES[i % HUES.length]});
+    } catch {}
+  }
+  hideToast();
+  restoring = false;
+  if (!tracks.length) return;
+  const t = tracks.find(x => x.id === state.curId) || tracks[0];
+  if (state.curId === t.id && state.pos != null) t.pos = clamp(state.pos, 0, t.buffer.duration);
+  select(t); renderList(true);
+  toast("Welcome back. Your songs and settings are where you left them.", 3000);
+}
 async function addToLibrary(t){
   try { await libOp("readwrite", st => st.add({name:t.name, file:t.file, s:Object.assign({}, t.s), added:Date.now()})); toast("Saved to your library", 2200); }
   catch { toast("Could not save. Private browsing may block storage.", 3500); }
@@ -1301,7 +1381,7 @@ function renderFaq(){
 /* ================= wiring ================= */
 $("#addBtn").onclick = () => $("#fileIn").click();
 $("#fileIn").onchange = e => { addFiles(e.target.files); e.target.value = ""; };
-$("#clearBtn").onclick = () => { pause(); destroyPlayer(); tracks.length = 0; cur = null; renderList(); renderStage(); };
+$("#clearBtn").onclick = () => { pause(); destroyPlayer(); tracks.forEach(t => dropFile(t.id)); tracks.length = 0; cur = null; renderList(); renderStage(); persistQueue(); };
 $("#dlAllBtn").onclick = () => exportAll();
 $("#dlAllMenu").onclick = e => { e.stopPropagation(); openMenu(e.currentTarget, [["Export all · MP3 320", () => exportAll("mp3-320")], ["Export all · WAV", () => exportAll("wav")]]); };
 document.addEventListener("keydown", e => {
@@ -1340,6 +1420,7 @@ document.addEventListener("pointerdown", e => {
 });
 
 renderList(); renderStage(); moveTabInd();
+restoreSession();
 window.__sw = {tracks, get cur(){ return cur; }, get playing(){ return playing; }, addFiles, renderTrack, encodeWav, encodeMp3, play, pause, curPos, setParam, applyPreset, seek};
 })();
 </script>
