@@ -710,15 +710,14 @@ function buildFx(ctx, live){
     n.wetHP = ctx.createBiquadFilter(); n.wetHP.type = "highpass"; n.wetHP.frequency.value = 220;
     n.wetLP = ctx.createBiquadFilter(); n.wetLP.type = "lowpass"; n.wetLP.frequency.value = 6500;
     n.conv = ctx.createConvolver(); n.conv.buffer = getIR(ctx);
-    n.lim = new AudioWorkletNode(ctx, "sw-limiter", {outputChannelCount:[2]});
     n.pre.connect(n.dry); n.dry.connect(n.master);
     n.pre.connect(n.wetHP); n.wetHP.connect(n.conv); n.conv.connect(n.wetLP); n.wetLP.connect(n.wet); n.wet.connect(n.master);
-    n.master.connect(n.lim); n.out = n.lim;
+    n.out = n.master;   // no limiter: same as the reference site
   }
   return n;
 }
 // 0–100% = plain gain; 100–200% pushes up to 3× (+9.5 dB) into the soft limiter
-const volGain = v => v <= 100 ? v/100 : 1 + (v-100)/100*2;
+const volGain = v => v/100;   // plain gain, like the reference site
 const mix = s => {
   const rv = s.reverb/100, bassOn = s.bass > 0;
   return {bassOn, lowG:Math.pow(10, (s.bass/10)/20), depth:(s.d8/100)*0.9,
@@ -917,7 +916,7 @@ async function renderTrack(t, onStage){
   jsEQ(sl, srr, s, sr);
   const xl = sl, xr = srr;
   const rv = s.reverb/100, tail = rv > 0 ? Math.ceil(3.7*sr) : 0;
-  const lim = new Limiter(sr), lat = lim.L, outLen = dryLen + tail;
+  const lat = 0, outLen = dryLen + tail;
   const L = new Float32Array(outLen + lat), R = new Float32Array(outLen + lat);
   for (let i=0;i<dryLen;i++){ L[i] = xl[i]*m.dry; R[i] = xr[i]*m.dry; }
   if (rv > 0){
@@ -944,8 +943,6 @@ async function renderTrack(t, onStage){
   }
   onStage && onStage("Mastering", 0.6);
   for (let i=0;i<outLen;i++){ L[i] *= m.master; R[i] *= m.master; }
-  lim.setDrive(m.drive);
-  lim.process(L, R, 0, outLen + lat);
   let end = outLen;
   while (end > 1 && Math.abs(L[end-1+lat]) < 1e-4 && Math.abs(R[end-1+lat]) < 1e-4) end--;
   end = Math.min(outLen, end + Math.floor(sr*0.05));
