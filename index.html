@@ -420,6 +420,12 @@ body.dragging .conv-drop{border-color:var(--fg);background:rgba(255,255,255,.05)
 .sytq .sgo{opacity:0;transition:opacity .15s,transform .2s}
 .sytq:hover{background:rgba(255,255,255,.07);color:var(--fg)}
 .sytq:hover .sgo{opacity:1;transform:translate(2px,-2px)}
+.sstudio{display:flex;align-items:center;gap:6px;border:1px solid var(--edge2);background:rgba(255,255,255,.06);border-radius:999px;padding:7px 11px;font-size:12.5px;font-weight:700;flex:none;transition:background .2s,border-color .2s,transform .25s cubic-bezier(.3,1.5,.4,1)}
+.sstudio:hover{background:#fff;color:#000;border-color:#fff;transform:translateY(-1px)}
+.s-studio{background:#fff;color:#000;border-color:#fff;cursor:pointer}
+.s-studio:hover{background:#e6e6e6}
+.pvchip{border-color:rgba(255,255,255,.4)!important;color:var(--fg)!important}
+.pvnote{grid-column:1/-1;margin:0;font-size:12px;color:var(--muted)}
 .sfoot{padding:9px 10px 5px;font-size:11px;color:var(--dim);border-top:1px solid var(--edge);margin-top:4px}
 .pill{margin-left:0}
 :root[data-skin=moon] .skin-btn{margin-left:0}
@@ -917,7 +923,7 @@ function seek(sec){
 }
 
 /* ================= files ================= */
-async function addFiles(files, settings){
+async function addFiles(files, settings, meta){
   const list = [...files].filter(f => f && (/^(audio|video)\//.test(f.type) || /\.(mp3|wav|ogg|m4a|flac|aac|webm|opus)$/i.test(f.name)));
   if (!list.length){ toast("That is not an audio file. Try MP3, WAV, OGG, M4A or FLAC.", 3500); return; }
   await ensureCtx();
@@ -926,7 +932,7 @@ async function addFiles(files, settings){
     toast(`<span class="spin"></span>Loading ${esc(f.name)}`, 0);
     try {
       const buffer = await ac.decodeAudioData((await f.arrayBuffer()).slice(0));
-      const t = {id:uid++, name:f.name, file:f, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), settings || {}), pos:0, hue:HUES[(uid) % HUES.length]};
+      const t = Object.assign({id:uid++, name:f.name, file:f, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), settings || {}), pos:0, hue:HUES[(uid) % HUES.length]}, meta || {});
       tracks.push(t); storeFile(t); if (!first) first = t;
     } catch { toast(`Could not read ${esc(f.name)}. It may be damaged or in a format your browser cannot open.`, 4000); await new Promise(r => setTimeout(r, 1400)); }
   }
@@ -1087,6 +1093,7 @@ function saveBlob(blob, name){
 let busy = false;
 async function exportTrack(t, fmt){
   if (busy){ toast("Wait for the current export to finish.", 2000); return; }
+  if (t.preview){ toast("This is a 30-second preview from search. You can remix and play it, but only your own files can be exported.", 4200); return; }
   busy = true; fmt = fmt || prefs.format;
   const [kind, kb] = fmt.split("-");
   const stage = (txt, p) => toastProgress(txt, p);
@@ -1104,7 +1111,7 @@ async function exportTrack(t, fmt){
 }
 async function exportAll(fmt){
   if (!tracks.length){ toast("Add a song first.", 2000); return; }
-  for (const t of tracks.slice()) await exportTrack(t, fmt);
+  for (const t of tracks.slice()) if (!t.preview) await exportTrack(t, fmt);
 }
 
 /* ================= icons ================= */
@@ -1295,7 +1302,7 @@ function renderStage(){
       </div>`).join("")}</div>
     <div class="export">
       <select id="fmtSel" aria-label="Export format"><option value="mp3-320">MP3 · 320</option><option value="mp3-192">MP3 · 192</option><option value="mp3-128">MP3 · 128</option><option value="wav">WAV · lossless</option></select>
-      <div class="row"><button class="icon-btn" id="libBtn" title="Save to library" aria-label="Save to library">${I.heart}</button><button class="btn hot" id="expBtn">${I.down}Export</button></div>
+      <div class="row"><button class="icon-btn" id="libBtn" title="Save to library" aria-label="Save to library">${I.heart}</button><button class="btn hot" id="expBtn" ${cur.preview ? "disabled title=\"Previews from search can be played and remixed, not exported\"" : ""}>${I.down}Export</button></div>${cur.preview ? `<p class="pvnote">30-second preview from search: remix and listen here. To export, add your own file of this song.</p>` : ""}
     </div>`;
   PARAMS.forEach(p => {
     const r = $("#r-" + p.k), v = $("#v-" + p.k);
@@ -1369,7 +1376,7 @@ function syncControls(){
   });
   const semis = 12*Math.log2(pitchRatio(s));
   const chips = $("#chips");
-  if (chips) chips.innerHTML = `<span class="chip"><b>${(+s.speed).toFixed(2)}×</b> tempo</span><span class="chip"><b>${semis >= 0 ? "+" : "−"}${Math.abs(semis).toFixed(1)}</b> st key</span><span class="chip" id="lenChip"></span>`;
+  if (chips) chips.innerHTML = (cur.preview ? `<span class="chip pvchip"><b>30 s</b> preview</span>` : "") + `<span class="chip"><b>${(+s.speed).toFixed(2)}×</b> tempo</span><span class="chip"><b>${semis >= 0 ? "+" : "−"}${Math.abs(semis).toFixed(1)}</b> st key</span><span class="chip" id="lenChip"></span>`;
   const csub = document.getElementById("cassSub"); if (csub) csub.textContent = mixName(s);
   renderTimes(); drawWave();
 }
@@ -1745,7 +1752,7 @@ function persistQueue(){
   if (restoring) return;
   clearTimeout(persistT);
   persistT = setTimeout(() => {
-    const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t.pos}));
+    const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t.pos, preview:!!t.preview}));
     dbOp("queue", "readwrite", st => { st.clear(); recs.forEach(r => st.put(r)); }).catch(() => {});
   }, 350);
   saveState();
@@ -1759,7 +1766,7 @@ addEventListener("pagehide", () => { if (cur) cur.pos = curPos(); saveState(); p
 document.addEventListener("visibilitychange", () => { if (document.hidden){ saveState(); persistQueueNow(); } });
 function persistQueueNow(){
   if (restoring) return; clearTimeout(persistT);
-  const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t === cur ? curPos() : t.pos}));
+  const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t === cur ? curPos() : t.pos, preview:!!t.preview}));
   dbOp("queue", "readwrite", st => { st.clear(); recs.forEach(r => st.put(r)); }).catch(() => {});
 }
 setInterval(() => { if (playing) saveState(); }, 2000);
@@ -1777,7 +1784,7 @@ async function restoreSession(){
     try {
       const f = await dbOp("files", "readonly", st => st.get(r.id)); if (!f || !f.file) continue;
       const buffer = await ac.decodeAudioData((await f.file.arrayBuffer()).slice(0));
-      tracks.push({id:r.id, name:r.name, file:f.file, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), r.s), pos:clamp(r.pos || 0, 0, buffer.duration), hue:r.hue || HUES[i % HUES.length]});
+      tracks.push({id:r.id, name:r.name, file:f.file, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), r.s), pos:clamp(r.pos || 0, 0, buffer.duration), hue:r.hue || HUES[i % HUES.length], preview:!!r.preview});
     } catch {}
   }
   hideToast();
@@ -2337,9 +2344,23 @@ function renderSearch(){
           <div class="sa">${esc(r.artist)}${r.album ? " · " + esc(r.album) : ""}${r.year ? " · " + esc(r.year) : ""}</div>
         </div>
         <div class="sside"><span class="sdur">${mmss(r.dur)}</span><span class="ssrc">${r.src.join(" + ")}</span></div>
+        ${r.preview ? `<button class="sstudio" data-studio="${i}" title="Remix the 30-second preview in Studio" aria-label="Remix in Studio"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Remix</span></button>` : ""}
       </div>
-      ${i === sState.open ? `<div class="slinks">${SERVICES.map(s => `<a href="${esc(s.url(r))}" target="_blank" rel="noopener" class="slink s-${s.id}">${s.name}</a>`).join("")}</div>` : ""}
+      ${i === sState.open ? `<div class="slinks">${r.preview ? `<button class="slink s-studio" data-studio="${i}">Remix in Studio · 30 s preview</button>` : ""}${SERVICES.map(s => `<a href="${esc(s.url(r))}" target="_blank" rel="noopener" class="slink s-${s.id}">${s.name}</a>`).join("")}</div>` : ""}
     </div>`).join("") + ytBlock + `<div class="sfoot">Songs from Apple Music and Deezer · ▶ plays an official 30-second preview · YouTube searches open in a new tab</div>`;
+}
+async function loadPreviewToStudio(i){
+  const r = sState.results[i]; if (!r || !r.preview){ toast("This song has no preview to load.", 2500); return; }
+  $("#sres").hidden = true; previewStop(); $("#q").blur();
+  show("studio");
+  toast('<span class="spin"></span>Loading ' + esc(r.artist + " - " + r.title), 0);
+  try {
+    const res = await fetch(r.preview); if (!res.ok) throw new Error();
+    const blob = await res.blob();
+    const ext = /\.m4a|aac/i.test(r.preview) ? "m4a" : "mp3";
+    const name = (r.artist + " - " + r.title).replace(/[\/:*?"<>|]+/g, " ") + " (preview)." + ext;
+    await addFiles([new File([blob], name, {type:ext === "m4a" ? "audio/mp4" : "audio/mpeg"})], undefined, {preview:true});
+  } catch { toast("Could not load this preview. Try another song.", 3000); }
 }
 let sT = 0;
 function runSearch(q){
@@ -2374,6 +2395,7 @@ function runSearch(q){
     const el = box.querySelector(".sitem.sel"); if (el) el.scrollIntoView({block:"nearest"});
   });
   box.addEventListener("click", e => {
+    const st = e.target.closest("[data-studio]"); if (st){ e.stopPropagation(); loadPreviewToStudio(+st.dataset.studio); return; }
     const p = e.target.closest("[data-play]"); if (p){ e.stopPropagation(); previewToggle(+p.dataset.play); return; }
     if (e.target.closest("a")) return;
     const it = e.target.closest(".sitem"); if (!it) return;
