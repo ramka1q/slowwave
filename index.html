@@ -503,6 +503,13 @@ body.ab-on .deck::after{content:"ORIGINAL \00B7  release to hear your remix";pos
 .ctl.is-off .scale{opacity:.5}
 .ctl.is-off .ctl-top label{color:var(--muted)}
 .ctl-top .toggle{margin-left:2px}
+.mc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:6px}
+.mc{display:flex;align-items:center;gap:12px;text-align:left;padding:11px 12px;border-radius:13px;border:1px solid var(--edge);background:rgba(255,255,255,.03);transition:background .2s,border-color .2s}
+.mc:hover{background:rgba(255,255,255,.07)}
+.mc.on{border-color:var(--edge2)}
+.mc b{display:block;font-size:13.5px}
+.mc small{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
+.mc .toggle{flex:none;pointer-events:none}
 .sfoot{padding:9px 10px 5px;font-size:11px;color:var(--dim);border-top:1px solid var(--edge);margin-top:4px}
 .pill{margin-left:0}
 :root[data-skin=moon] .skin-btn{margin-left:0}
@@ -827,7 +834,45 @@ class LimProc extends AudioWorkletProcessor{
   }
 }
 registerProcessor("sw-limiter",LimProc);`;
-const WORKLET_URL = URL.createObjectURL(new Blob([LIMITER_SRC + PLAYER_SRC], {type:"application/javascript"}));
+const GLUE_SRC = `
+class Glue{
+  constructor(sr){ this.env=0; this.att=1-Math.exp(-1/(sr*0.008)); this.rel=1-Math.exp(-1/(sr*0.16)); this.set(0); }
+  set(a){ this.a=a; this.thr=Math.pow(10,(-24*a)/20); this.inv=1/(1+3*a)-1; this.make=Math.pow(10,(11.5*a)/20); }
+  process(l,r,from,to){
+    if(this.a<=0) return;
+    const thr=this.thr,inv=this.inv,mk=this.make,at=this.att,rl=this.rel;
+    for(let i=from;i<to;i++){
+      const a=l[i],b=r[i],x=Math.max(a<0?-a:a,b<0?-b:b);
+      this.env+=(x-this.env)*(x>this.env?at:rl);
+      const g=(this.env>thr?Math.pow(this.env/thr,inv):1)*mk;
+      l[i]=a*g; r[i]=b*g;
+    }
+  }
+}
+class GlueProc extends AudioWorkletProcessor{
+  constructor(){ super(); this.g=new Glue(sampleRate); this.port.onmessage=e=>{ if(e.data.a!=null) this.g.set(e.data.a); }; }
+  process(ins,outs){ const i=ins[0],o=outs[0],n=o[0].length;
+    if(!i||!i.length){ o[0].fill(0); if(o[1]) o[1].fill(0); return true; }
+    o[0].set(i[0]); if(o[1]) o[1].set(i[1]||i[0]);
+    this.g.process(o[0],o[1]||o[0],0,n); return true; }
+}
+registerProcessor("sw-glue",GlueProc);`;
+const Glue = new Function("class AudioWorkletProcessor{constructor(){this.port={};}}const registerProcessor=()=>{};const sampleRate=48000;" + GLUE_SRC + ";return Glue;")();
+const WORKLET_URL = URL.createObjectURL(new Blob([LIMITER_SRC + PLAYER_SRC + GLUE_SRC], {type:"application/javascript"}));
+// vinyl crackle + tape hiss, the same sound live and in the export
+const crackleCache = {};
+function makeCrackle(sr){
+  if (crackleCache[sr]) return crackleCache[sr];
+  const len = Math.floor(sr*6), L = new Float32Array(len), R = new Float32Array(len);
+  let seed = 424242; const rnd = () => (seed = (seed*16807) % 2147483647)/2147483647;
+  let hl = 0, hr = 0;
+  for (let i=0;i<len;i++){ hl += 0.07*((rnd()*2-1) - hl); hr += 0.07*((rnd()*2-1) - hr); L[i] = hl*0.32; R[i] = hr*0.32; }
+  for (let k=0;k<90;k++){
+    const pos = Math.floor(rnd()*(len - 200)), big = rnd() < 0.12, amp = (big ? 0.55 + rnd()*0.4 : 0.12 + rnd()*0.28)*(rnd() < 0.5 ? -1 : 1), dec = 4 + rnd()*12, pan = 0.55 + rnd()*0.45;
+    for (let j=0;j<120;j++){ const v = amp*Math.exp(-j/dec)*(j % 2 ? -0.6 : 1); L[pos+j] += v; R[pos+j] += v*pan; }
+  }
+  return crackleCache[sr] = [L, R];
+}
 
 /* ================= audio graph ================= */
 let ac = null, acReady = null, fx = null, analyser = null, siteGain = null, xf = null, xfOut = false;
@@ -892,7 +937,18 @@ function buildFx(ctx, live){
   n.input.connect(n.hp160); n.hp160.connect(n.lp2500); n.lp2500.connect(n.bands);
   n.input.connect(n.hp2500); n.hp2500.connect(n.bands);
   n.bands.connect(n.sum); n.input.connect(n.flat); n.flat.connect(n.sum);
-  n.sum.connect(n.pan); n.pan.connect(n.pre);
+  // Brightness (high shelf) -> Another room (low-pass) -> Punch (compressor) -> Stereo width -> 8D
+  n.bright = bq("highshelf", 3500); n.bright.gain.value = 0;
+  n.room = bq("lowpass", ctx.sampleRate/2); n.room.Q.value = 0;
+  n.sum.connect(n.bright); n.bright.connect(n.room);
+  let last = n.room;
+  if (live){ n.glue = new AudioWorkletNode(ctx, "sw-glue", {outputChannelCount:[2]}); last.connect(n.glue); last = n.glue; }
+  n.split = ctx.createChannelSplitter(2); n.merge = ctx.createChannelMerger(2);
+  n.wLL = ctx.createGain(); n.wRL = ctx.createGain(); n.wLR = ctx.createGain(); n.wRR = ctx.createGain(); n.wRL.gain.value = 0; n.wLR.gain.value = 0;
+  last.connect(n.split);
+  n.split.connect(n.wLL, 0); n.split.connect(n.wRL, 1); n.split.connect(n.wLR, 0); n.split.connect(n.wRR, 1);
+  n.wLL.connect(n.merge, 0, 0); n.wRL.connect(n.merge, 0, 0); n.wLR.connect(n.merge, 0, 1); n.wRR.connect(n.merge, 0, 1);
+  n.merge.connect(n.pan); n.pan.connect(n.pre);
   if (live){
     n.dry = ctx.createGain(); n.wet = ctx.createGain(); n.master = ctx.createGain();
     n.wetHP = ctx.createBiquadFilter(); n.wetHP.type = "highpass"; n.wetHP.frequency.value = 220;
@@ -900,6 +956,17 @@ function buildFx(ctx, live){
     n.conv = ctx.createConvolver(); n.conv.buffer = getIR(ctx);
     n.pre.connect(n.dry); n.dry.connect(n.master);
     n.pre.connect(n.wetHP); n.wetHP.connect(n.conv); n.conv.connect(n.wetLP); n.wetLP.connect(n.wet); n.wet.connect(n.master);
+    // Echo: send -> delay -> master, with a darkened feedback loop
+    n.echoSend = ctx.createGain(); n.echoSend.gain.value = 0;
+    n.delay = ctx.createDelay(2); n.delay.delayTime.value = 0.33;
+    n.echoLP = bq("lowpass", 3800); n.echoFb = ctx.createGain(); n.echoFb.gain.value = 0;
+    n.pre.connect(n.echoSend); n.echoSend.connect(n.delay); n.delay.connect(n.master);
+    n.delay.connect(n.echoLP); n.echoLP.connect(n.echoFb); n.echoFb.connect(n.delay);
+    // Vinyl noise
+    const [cl, cr] = makeCrackle(ctx.sampleRate), nb = ctx.createBuffer(2, cl.length, ctx.sampleRate);
+    nb.copyToChannel(cl, 0); nb.copyToChannel(cr, 1);
+    n.noiseSrc = ctx.createBufferSource(); n.noiseSrc.buffer = nb; n.noiseSrc.loop = true;
+    n.noise = ctx.createGain(); n.noise.gain.value = 0; n.noiseSrc.connect(n.noise); n.noise.connect(n.master); n.noiseSrc.start();
     n.out = n.master;   // no limiter: same as the reference site
   }
   return n;
@@ -907,14 +974,21 @@ function buildFx(ctx, live){
 // 0–100% = plain gain; 100–200% pushes up to 3× (+9.5 dB) into the soft limiter
 const volGain = v => v/100;   // plain gain, like the reference site
 const mix = s => {
-  const rv = s.reverb/100, bassOn = s.bass > 0;
+  const rv = s.reverb/100, bassOn = s.bass > 0, e = (s.echo || 0)/100, w = (s.width ?? 100)/100;
   return {bassOn, lowG:Math.pow(10, (s.bass/10)/20), depth:(s.d8/100)*0.9,
+          bright:9*(s.bright || 0)/100, room:s.room || 0, roomF:20000*Math.pow(380/20000, (s.room || 0)/100),
+          punch:(s.punch || 0)/100, wa:(1 + w)/2, wb:(1 - w)/2, width:w,
+          echoWet:0.5*e, echoFb:e > 0 ? 0.25 + 0.35*e : 0, noise:0.2*(s.noise || 0)/100,
           dry:1 - 0.22*rv, wet:1.45*rv, master:volGain(s.volume), drive:clamp((s.volume-100)/100, 0, 1)};
 };
 function applyFx(n, s, ctx, now){
   const m = mix(s), t = ctx.currentTime;
   const set = (p, v) => { if (now) { p.cancelScheduledValues(0); p.value = v; } else p.setTargetAtTime(v, t, 0.025); };
   set(n.lowGain.gain, m.lowG); set(n.bands.gain, m.bassOn ? 1 : 0); set(n.flat.gain, m.bassOn ? 0 : 1); set(n.depth.gain, m.depth);
+  set(n.bright.gain, m.bright); set(n.room.frequency, m.room > 0 ? m.roomF : ctx.sampleRate/2);
+  set(n.wLL.gain, m.wa); set(n.wRR.gain, m.wa); set(n.wRL.gain, m.wb); set(n.wLR.gain, m.wb);
+  if (n.glue && n.lastPunch !== m.punch){ n.lastPunch = m.punch; n.glue.port.postMessage({a:m.punch}); }
+  if (n.echoSend){ set(n.echoSend.gain, m.echoWet); set(n.echoFb.gain, m.echoFb); set(n.noise.gain, m.noise); }
   if (n.dry){ set(n.dry.gain, m.dry); set(n.wet.gain, m.wet); set(n.master.gain, m.master); }
   if (n.lim && n.lim.port && n.lastDrive !== m.drive){ n.lastDrive = m.drive; n.lim.port.postMessage({drive:m.drive}); }
 }
@@ -927,13 +1001,19 @@ function applyPlayer(node, s, ctx, now){
 const chans = b => { const a = []; for (let c=0;c<b.numberOfChannels;c++) a.push(b.getChannelData(c)); return a; };
 
 /* ================= state ================= */
-const DEF = () => ({speed:1, reverb:0, pitchOn:false, pitch:0, bass:0, d8:0, volume:100});
+const DEF = () => ({speed:1, reverb:0, pitchOn:false, pitch:0, bass:0, bright:0, room:0, echo:0, punch:0, width:100, d8:0, noise:0, volume:100});
 const PARAMS = [
   {k:"speed",  label:"Speed",     min:0.5, max:1.5, step:0.01, def:1,   fmt:v => (+v).toFixed(2)+"×", scale:["0.5×","1×","1.5×"]},
   {k:"pitch",  label:"Pitch",     min:-12, max:12,  step:0.5,  def:0,   fmt:v => (v>0?"+":"")+(+v).toFixed(1)+" st", scale:["−12 st","0","+12 st"]},
   {k:"reverb", label:"Reverb",    min:0,   max:100, step:1,    def:0,   fmt:v => Math.round(v)+"%", scale:["dry","50%","hall"]},
   {k:"bass",   label:"Bass boost",min:0,   max:100, step:1,    def:0,   fmt:v => "+"+Math.round(v)+"%", scale:["0","+50%","+100%"]},
-  {k:"d8",     label:"8D rotate", min:0,   max:100, step:1,    def:0,   fmt:v => Math.round(v)+"%", scale:["off","half","full"]},
+  {k:"bright", label:"Brightness", min:0,  max:100, step:1,    def:0,   fmt:v => "+"+Math.round(v)+"%", scale:["0","+50%","+100%"], hint:"Brings back clear highs"},
+  {k:"room",   label:"Another room", min:0, max:100, step:1,   def:0,   fmt:v => Math.round(v)+"%", scale:["off","next door","far away"], hint:"Music behind a wall"},
+  {k:"echo",   label:"Echo",       min:0,   max:100, step:1,    def:0,   fmt:v => Math.round(v)+"%", scale:["off","50%","100%"], hint:"Soft repeats"},
+  {k:"punch",  label:"Punch",      min:0,   max:100, step:1,    def:0,   fmt:v => Math.round(v)+"%", scale:["off","50%","max"], hint:"Fuller and louder"},
+  {k:"width",  label:"Stereo width", min:0, max:200, step:1,   def:100, fmt:v => Math.round(v)+"%", scale:["mono","100%","wide"], hint:"Wider in headphones"},
+  {k:"d8",     label:"8D rotate", min:0,   max:100, step:1,    def:0,   fmt:v => Math.round(v)+"%", scale:["off","half","full"], hint:"Sound circles your head"},
+  {k:"noise",  label:"Vinyl noise", min:0,  max:100, step:1,    def:0,   fmt:v => Math.round(v)+"%", scale:["off","50%","100%"], hint:"Record crackle and tape hiss"},
   {k:"volume", label:"Track volume",    min:0,   max:200, step:1,    def:100, fmt:v => Math.round(v)+"%", scale:["0%","100%","200%"]},
 ];
 const PRESETS = [
@@ -956,9 +1036,12 @@ const tracks = [];
 let cur = null, playing = false, player = null, playerTrack = null, lastMsgT = 0, uid = Date.now();
 // A/B: while "Original" is held the song plays untouched; the remix settings stay as they are
 let abOrig = false;
-const TOGG = ["speed", "reverb", "bass", "d8", "volume"];
-const isOn = (s, k) => !s.on || s.on[k] !== false;
-function applied(s){ const o = Object.assign({}, s), d = DEF(); TOGG.forEach(k => { if (!isOn(s, k)) o[k] = d[k]; }); return o; }
+const TOGG = ["speed", "reverb", "bass", "bright", "room", "echo", "punch", "width", "d8", "noise", "volume"];
+const HIDDEN_BY_DEFAULT = ["d8", "width", "noise"];
+const isShown = k => prefs.show && prefs.show[k] !== undefined ? !!prefs.show[k] : !HIDDEN_BY_DEFAULT.includes(k);
+const isOn = (s, k) => isShown(k) && (!s.on || s.on[k] !== false);
+function applied(s){ const d = DEF(), o = Object.assign(DEF(), s); TOGG.forEach(k => { if (!isOn(s, k)) o[k] = d[k]; }); if (!isShown("pitch")) o.pitchOn = false; return o; }
+function setShown(k, v){ prefs.show = Object.assign({}, prefs.show, {[k]:v}); savePrefs(); }
 const effS = t => abOrig ? DEF() : applied(t.s);
 /* play mode: queue (in order, stop at end) · all (queue on repeat) · one (repeat this song) */
 const MODES = {
@@ -1099,6 +1182,10 @@ function biq(type, f, Q, G, sr){
     const al = sn/2*Math.SQRT2, k = 2*Math.sqrt(A)*al;
     b0 = A*((A+1)-(A-1)*cs+k); b1 = 2*A*((A-1)-(A+1)*cs); b2 = A*((A+1)-(A-1)*cs-k);
     a0 = (A+1)+(A-1)*cs+k; a1 = -2*((A-1)+(A+1)*cs); a2 = (A+1)+(A-1)*cs-k;
+  } else if (type === "highshelf"){
+    const al = sn/2*Math.SQRT2, k = 2*Math.sqrt(A)*al;
+    b0 = A*((A+1)+(A-1)*cs+k); b1 = -2*A*((A-1)+(A+1)*cs); b2 = A*((A+1)+(A-1)*cs-k);
+    a0 = (A+1)-(A-1)*cs+k; a1 = 2*((A-1)-(A+1)*cs); a2 = (A+1)-(A-1)*cs-k;
   } else { // peaking
     const al = sn/(2*Q);
     b0 = 1+al*A; b1 = -2*cs; b2 = 1-al*A; a0 = 1+al/A; a1 = -2*cs; a2 = 1-al/A;
@@ -1128,6 +1215,10 @@ function jsEQ(L, R, s, sr){
       }
     }
   }
+  if (m.bright > 0){ const c = biq("highshelf", 3500, 0, m.bright, sr); runBiq(L, c); runBiq(R, c); }
+  if (m.room > 0){ const c = biq("lowpass", m.roomF, 0, 0, sr); runBiq(L, c); runBiq(R, c); }
+  if (m.punch > 0){ const g = new Glue(sr); g.set(m.punch); g.process(L, R, 0, L.length); }
+  if (Math.abs(m.width - 1) > 1e-6){ const a = m.wa, b = m.wb; for (let i=0;i<L.length;i++){ const l = L[i], r = R[i]; L[i] = a*l + b*r; R[i] = b*l + a*r; } }
   if (m.depth > 0){
     const k = 2*Math.PI*0.12/sr, Hp = Math.PI/2, len = L.length;
     for (let s0=0; s0<len; s0+=64){
@@ -1155,7 +1246,8 @@ async function renderTrack(t, onStage){
   onStage && onStage("Shaping bass", 0.36); await new Promise(r => setTimeout(r, 0));
   jsEQ(sl, srr, s, sr);
   const xl = sl, xr = srr;
-  const rv = s.reverb/100, tail = rv > 0 ? Math.ceil(3.7*sr) : 0;
+  const rv = s.reverb/100, echoTail = m.echoFb > 0 ? Math.min(8, 0.33*Math.log(0.001)/Math.log(m.echoFb) + 0.4) : 0;
+  const tail = Math.ceil(Math.max(rv > 0 ? 3.7 : 0, echoTail)*sr);
   const lat = 0, outLen = dryLen + tail;
   const L = new Float32Array(outLen + lat), R = new Float32Array(outLen + lat);
   for (let i=0;i<dryLen;i++){ L[i] = xl[i]*m.dry; R[i] = xr[i]*m.dry; }
@@ -1181,6 +1273,20 @@ async function renderTrack(t, onStage){
         L[off+j] += (wl[i0] + (wl[i0+1]-wl[i0])*f)*m.wet; R[off+j] += (wr[i0] + (wr[i0+1]-wr[i0])*f)*m.wet; }
     }
   }
+  if (m.echoWet > 0){
+    const D = Math.round(0.33*sr), bl = new Float32Array(D), br = new Float32Array(D), c = biq("lowpass", 3800, 1, 0, sr);
+    const [C0, C1, C2, C3, C4] = c; let x1l=0,x2l=0,y1l=0,y2l=0, x1r=0,x2r=0,y1r=0,y2r=0, idx = 0;
+    for (let i=0;i<outLen;i++){
+      const ol = bl[idx], or = br[idx];
+      L[i] += ol; R[i] += or;
+      const fl = C0*ol + C1*x1l + C2*x2l - C3*y1l - C4*y2l; x2l=x1l; x1l=ol; y2l=y1l; y1l=fl;
+      const fr = C0*or + C1*x1r + C2*x2r - C3*y1r - C4*y2r; x2r=x1r; x1r=or; y2r=y1r; y1r=fr;
+      const il = i < dryLen ? xl[i]*m.echoWet : 0, ir = i < dryLen ? xr[i]*m.echoWet : 0;
+      bl[idx] = il + fl*m.echoFb; br[idx] = ir + fr*m.echoFb;
+      if (++idx >= D) idx = 0;
+    }
+  }
+  if (m.noise > 0){ const [cl, cr] = makeCrackle(sr), n = cl.length; for (let i=0;i<outLen;i++){ L[i] += cl[i % n]*m.noise; R[i] += cr[i % n]*m.noise; } }
   onStage && onStage("Mastering", 0.6);
   for (let i=0;i<outLen;i++){ L[i] *= m.master; R[i] *= m.master; }
   let end = outLen;
@@ -1272,12 +1378,16 @@ const I = {
 /* ================= queue ================= */
 function summary(s){
   s = applied(s);
+  const extra = [];
+  if (s.bright) extra.push(`bright +${s.bright}%`); if (s.room) extra.push(`room ${s.room}%`); if (s.echo) extra.push(`echo ${s.echo}%`); if (s.punch) extra.push(`punch ${s.punch}%`);
+  if (s.width !== 100) extra.push(`width ${s.width}%`); if (s.noise) extra.push(`vinyl ${s.noise}%`);
   const p = [`${(+s.speed).toFixed(2)}×`];
   if (s.reverb) p.push(`rev ${s.reverb}%`);
   if (s.pitchOn && s.pitch) p.push(`${s.pitch > 0 ? "+" : ""}${s.pitch}st`);
   if (s.bass) p.push(`bass +${s.bass}%`);
   if (s.d8) p.push(`8D ${s.d8}%`);
   if (s.volume !== 100) p.push(`vol ${s.volume}%`);
+  p.push(...extra);
   return p.join(" · ");
 }
 function renderList(animate){
@@ -1435,7 +1545,7 @@ function renderStage(){
   mixEl.innerHTML = `
     <div class="mix-head"><h2 class="h">Mix</h2><span class="live" title="Changes apply instantly"><i></i>LIVE</span></div>
     <div class="presets">${PRESETS.map((p, i) => `<button class="preset" data-preset="${p.id}" style="--i:${i}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p.ico}</svg>${p.name}</button>`).join("")}</div>
-    <div class="ctls">${PARAMS.map((p, i) => `
+    <div class="ctls">${PARAMS.filter(p => isShown(p.k)).map((p, i) => `
       <div class="ctl" style="--i:${i + 6}">
         <div class="ctl-top"><label for="r-${p.k}">${p.label}</label>${p.k === "pitch" ? `<button class="toggle" id="pitchSw" aria-label="Set pitch separately from speed" aria-pressed="false"></button>` : `<button class="toggle" data-ptog="${p.k}" aria-label="Turn ${p.label} on or off" aria-pressed="true"></button>`}
           <input class="val" id="v-${p.k}" aria-label="${p.label} value" inputmode="decimal" autocomplete="off">
@@ -1448,7 +1558,7 @@ function renderStage(){
       <div class="row"><button class="icon-btn" id="libBtn" title="Save to library" aria-label="Save to library">${I.heart}</button><button class="btn hot" id="expBtn" ${cur.preview ? "disabled title=\"Previews from search can be played and remixed, not exported\"" : ""}>${I.down}Export</button></div>${cur.preview ? `<p class="pvnote">30-second preview from search: remix and listen here. To export, add your own file of this song.</p>` : ""}
     </div>`;
   PARAMS.forEach(p => {
-    const r = $("#r-" + p.k), v = $("#v-" + p.k);
+    const r = $("#r-" + p.k), v = $("#v-" + p.k); if (!r) return;
     r.addEventListener("input", () => setParam(p.k, +r.value));
     const box = r.closest(".ctl");
     r.addEventListener("pointerdown", () => box.classList.add("active"));
@@ -1460,7 +1570,7 @@ function renderStage(){
     v.addEventListener("keydown", e => { if (e.key === "Enter") v.blur(); if (e.key === "Escape"){ v.value = cur.s[p.k]; v.blur(); } });
     v.addEventListener("change", () => { const x = parseFloat(String(v.value).replace(",", ".")); if (!isNaN(x)) setParam(p.k, clamp(x, p.min, p.max), p.k === "pitch"); });
   });
-  $("#pitchSw").onclick = () => setParam("pitchOn", !cur.s.pitchOn);
+  const psw = $("#pitchSw"); if (psw) psw.onclick = () => setParam("pitchOn", !cur.s.pitchOn);
   mixEl.querySelectorAll("[data-ptog]").forEach(b => b.onclick = () => setOn(b.dataset.ptog, !isOn(cur.s, b.dataset.ptog)));
   $("#playBtn").onclick = toggle;
   $("#prevBtn").onclick = () => curPos() > 3 ? seek(0) : step(-1);
@@ -1509,7 +1619,9 @@ function applyPreset(id){
   const p = PRESETS.find(x => x.id === id); if (!cur) return;
   if (cur.s && playing){ cur.pos = curPos(); lastMsgT = performance.now(); }
   if (!p.s) cur.s = Object.assign(DEF(), {volume:cur.s.volume});
-  else { Object.assign(cur.s, p.s); cur.s.on = Object.assign({}, cur.s.on); Object.keys(p.s).forEach(k => { if (TOGG.includes(k)) cur.s.on[k] = true; }); }
+  else { Object.assign(cur.s, p.s); cur.s.on = Object.assign({}, cur.s.on); let reveal = false;
+    Object.keys(p.s).forEach(k => { if (TOGG.includes(k)) cur.s.on[k] = true; if (TOGG.includes(k) && p.s[k] !== DEF()[k] && !isShown(k)){ setShown(k, true); reveal = true; } });
+    if (reveal){ liveApply(); renderStage(); return; } }
   liveApply();
 }
 function syncControls(){
@@ -1517,12 +1629,12 @@ function syncControls(){
   const s = cur.s;
   PARAMS.forEach(p => {
     const r = $("#r-" + p.k), v = $("#v-" + p.k); if (!r) return;
-    r.value = s[p.k]; r.style.setProperty("--p", ((s[p.k]-p.min)/(p.max-p.min)*100) + "%");
+    const val = s[p.k] ?? p.def; r.value = val; r.style.setProperty("--p", ((val-p.min)/(p.max-p.min)*100) + "%");
     if (p.k === "pitch") r.disabled = !s.pitchOn;
     if (document.activeElement !== v){
       if (p.k === "pitch" && !s.pitchOn){ v.value = "follows"; v.classList.add("off"); }
       else if (TOGG.includes(p.k) && !isOn(s, p.k)){ v.value = "off"; v.classList.add("off"); }
-      else { v.value = p.fmt(s[p.k]); v.classList.remove("off"); }
+      else { v.value = p.fmt(val); v.classList.remove("off"); }
     }
     if (TOGG.includes(p.k)){ const on = isOn(s, p.k), tg = document.querySelector(`[data-ptog="${p.k}"]`);
       if (tg){ tg.classList.toggle("on", on); tg.setAttribute("aria-pressed", on); }
@@ -2013,12 +2125,17 @@ function renderSettings(){
         <button data-v="vinyl"><span class="pv vinylp"><i></i></span><b>Vinyl</b><small>A record that spins with the tempo</small></button>
         <button data-v="cassette"><span class="pv cassp"><i></i></span><b>Cassette</b><small>A tape whose reels wind as it plays</small></button>
       </div></div>
+    <div class="row" style="flex-direction:column;align-items:stretch"><span>Mix controls<small>Choose which effects appear in the Mix panel. Hidden effects are switched off.</small></span>
+      <div class="mc-grid" id="mcGrid">${PARAMS.map(p => `<button class="mc${isShown(p.k) ? " on" : ""}" data-mc="${p.k}" aria-pressed="${isShown(p.k)}"><span class="toggle${isShown(p.k) ? " on" : ""}"></span><span><b>${p.label}</b><small>${p.hint || ({speed:"Tempo of the song", pitch:"Key, separate from speed", reverb:"Space and hall", bass:"Lows below 160 Hz", volume:"Loudness of the track"})[p.k] || ""}</small></span></button>`).join("")}</div></div>
     <label class="row" for="sFmt"><span>Export format<small>Used by the Export button and “All”.</small></span><select id="sFmt"><option value="mp3-320">MP3 · 320 kbps</option><option value="mp3-192">MP3 · 192 kbps</option><option value="mp3-128">MP3 · 128 kbps</option><option value="wav">WAV · lossless</option></select></label>
     <div class="row"><span>Play songs as soon as they load</span><button class="toggle" id="sAuto" aria-label="Autoplay"></button></div>
     <label class="row" for="sMode"><span>Play mode<small>What happens when a song ends.</small></span><select id="sMode"><option value="queue">Queue: play in order</option><option value="all">Repeat all: queue on repeat</option><option value="one">Repeat one: same song again</option></select></label></div>`;
   const f = $("#sFmt"); f.value = prefs.format; f.onchange = () => { prefs.format = f.value; savePrefs(); };
   const sw = (id, key) => { const el = $(id), upd = () => { el.classList.toggle("on", prefs[key]); el.setAttribute("aria-pressed", prefs[key]); }; upd(); el.onclick = () => { prefs[key] = !prefs[key]; savePrefs(); upd(); if (key === "loop" && player) player.port.postMessage({loop:prefs.loop}); }; };
   sw("#sAuto", "autoplay");
+  $("#mcGrid").onclick = e => { const b = e.target.closest("[data-mc]"); if (!b) return; const k = b.dataset.mc, v = !isShown(k);
+    setShown(k, v); b.classList.toggle("on", v); b.setAttribute("aria-pressed", v); b.querySelector(".toggle").classList.toggle("on", v);
+    if (cur){ liveApply(); renderStage(); } };
   const sm = $("#sMode"); sm.value = getMode(); sm.onchange = () => setMode(sm.value);
   const pick = (id, key, fn) => { const box = $(id), upd = () => box.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === prefs[key]));
     upd(); box.onclick = e => { const b = e.target.closest("button"); if (!b) return; fn(b.dataset.v, b); upd(); }; };
@@ -2665,6 +2782,14 @@ function histRow(e, compact){
 /* ================= what's new ================= */
 // Add a new entry at the TOP of this list with every update. The newest version is CHANGELOG[0].
 const CHANGELOG = [
+  {v:"1.11", date:"2026-11-19", title:"New effects", items:[
+    "Brightness brings back clear highs that get lost when a song is slowed.",
+    "Another room makes the music sound like it plays behind a wall.",
+    "Echo adds soft repeats.",
+    "Punch makes the mix fuller and louder.",
+    "Stereo width makes the sound wider in headphones, or mono.",
+    "Vinyl noise adds record crackle and tape hiss.",
+    "Settings → Mix controls: choose which effects show in the Mix panel. 8D, Stereo width and Vinyl noise are hidden at first."]},
   {v:"1.10", date:"2026-11-19", title:"On / off switches", items:[
     "Every effect now has an on/off switch, like Pitch: Speed, Reverb, Bass boost, 8D rotate and Track volume.",
     "A switched-off effect keeps its value, so turning it back on brings your setting back.",
