@@ -473,6 +473,32 @@ body.ab-on .deck::after{content:"ORIGINAL \00B7  release to hear your remix";pos
 .hd{font:500 11.5px/1.4 var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .hk{display:inline-block;margin-right:8px;padding:1px 6px;border-radius:5px;border:1px solid var(--edge2);font-size:10px;color:var(--fg)}
 .hrow .btn{padding:7px 12px;font-size:13px}
+.news-btn{position:relative;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--edge2);background:var(--glass);font-size:12.5px;font-weight:700;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);flex:none;transition:background .2s,transform .25s cubic-bezier(.3,1.5,.4,1)}
+.news-btn:hover{background:rgba(255,255,255,.12);transform:translateY(-1px)}
+.news-dot{position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:var(--fg);box-shadow:0 0 0 3px var(--ink),0 0 12px var(--fg);animation:pulse 1.6s ease-in-out infinite}
+.news-wrap{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:newsBg .3s both}
+@keyframes newsBg{from{opacity:0}}
+.news{width:min(560px,100%);max-height:min(82vh,760px);display:flex;flex-direction:column;border-radius:24px;background:rgba(12,12,14,.96);border:1px solid var(--edge2);box-shadow:0 30px 90px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.04);animation:newsIn .5s cubic-bezier(.2,1.2,.3,1) both}
+:root:not([data-skin=moon]) .news{background:rgba(22,16,34,.97)}
+@keyframes newsIn{from{opacity:0;transform:translateY(24px) scale(.96)}}
+.news-top{display:flex;justify-content:space-between;align-items:flex-start;padding:22px 22px 10px}
+.news-eye{font:600 11px/1 var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}
+.news h2{margin:8px 0 0;font:400 34px/1 var(--display);letter-spacing:-.5px}
+:root:not([data-skin=moon]) .news h2{font-weight:800;font-size:28px}
+.news-body{overflow:auto;padding:4px 22px 8px}
+.nv{padding:14px 0;border-top:1px solid var(--edge);animation:fadeUp .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*60ms + .15s)}
+.nv:first-child{border-top:0}
+.nvh{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.nvv{font:700 11px/1 var(--mono);padding:4px 7px;border-radius:6px;border:1px solid var(--edge2)}
+.nv.latest .nvv{background:var(--fg);color:#000;border-color:var(--fg)}
+.nvh b{flex:1;font-size:15px}
+.nvd{font:500 11px/1 var(--mono);color:var(--dim)}
+.nv ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:14px}
+.nv.latest ul{color:var(--fg)}
+.news-all{margin:6px 0 4px;background:none;border:0;color:var(--muted);font-size:13px;font-weight:600;text-decoration:underline;padding:6px 0}
+.news-foot{padding:12px 22px 20px;display:flex;justify-content:flex-end}
+.news-foot .btn{padding:11px 22px}
+@media (max-width:860px){.news-btn span{display:none}.news-btn{width:34px;padding:0;justify-content:center}}
 .sfoot{padding:9px 10px 5px;font-size:11px;color:var(--dim);border-top:1px solid var(--edge);margin-top:4px}
 .pill{margin-left:0}
 :root[data-skin=moon] .skin-btn{margin-left:0}
@@ -661,6 +687,7 @@ body.ab-on .deck::after{content:"ORIGINAL \00B7  release to hear your remix";pos
       <div class="sres" id="sres" role="listbox" hidden></div>
     </div>
     <div class="pill"><i></i>Private: your songs never leave this device</div>
+    <button class="news-btn" id="newsBtn" title="What's new" aria-label="What's new"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-4.2 3 1.5 5.3L12 15l-4.3 3 1.5-5.3L5 9.7l5.2-1.8z"/></svg><span>New</span><i class="news-dot" hidden></i></button>
     <button class="skin-btn" id="skinBtn" title="Switch design" aria-label="Switch design"><span class="sk-a"></span><span class="sk-m"></span></button>
   </header>
 
@@ -2613,6 +2640,82 @@ function histRow(e, compact){
     ${compact ? "" : `<button class="btn hot" data-hopen="${e.id}">Open</button><button class="icon-btn" data-hdel="${e.id}" aria-label="Remove from history" title="Remove"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`}
   </div>`;
 }
+
+/* ================= what's new ================= */
+// Add a new entry at the TOP of this list with every update. The newest version is CHANGELOG[0].
+const CHANGELOG = [
+  {v:"1.9", date:"2026-11-19", title:"Compare, play modes and history", items:[
+    "Hold the Remix button (or the O key) to hear the original song, release to hear your remix.",
+    "Play mode button: Queue plays songs in order, Repeat all loops the queue, Repeat one loops a single song.",
+    "Smooth fade when the queue moves to the next song.",
+    "History: the songs and previews you opened are in Library, and the 6 latest show when you click the empty search box.",
+    "This What's new window."]},
+  {v:"1.8", date:"2026-11-19", title:"Search every song", items:[
+    "Search bar at the top: songs from Apple Music and Deezer appear as you type.",
+    "Play a 30-second preview, or press Remix to load it into the Studio.",
+    "Bars show how much of the full song the preview covers.",
+    "YouTube search suggestions, and buttons to open a song in Spotify, YouTube, Apple Music, Deezer, SoundCloud or Genius.",
+    "Paste a SoundCloud link to play it in the official SoundCloud player."]},
+  {v:"1.7", date:"2026-11-18", title:"Converter", items:[
+    "New Converter tab: MP3, WAV, FLAC, M4A, OGG, OPUS, WEBM and AIFF.",
+    "Works with audio files and even MP4 video.",
+    "New cassette icon for the site."]},
+  {v:"1.6", date:"2026-11-18", title:"Bass boost and volume", items:[
+    "Bass boost raises everything below 160 Hz by up to +10 dB.",
+    "Listening volume next to Play, separate from Track volume (which goes into the export)."]},
+  {v:"1.5", date:"2026-11-18", title:"Moon and cassette", items:[
+    "Moon design and the cassette player are now the default.",
+    "A moon with craters and moving light beams that light up the buttons.",
+    "Animations stay on even when Windows animations are turned off."]},
+  {v:"1.4", date:"2026-11-18", title:"Designs", items:[
+    "Switch between the Aurora and Moon designs, and between vinyl and cassette."]},
+  {v:"1.3", date:"2026-11-18", title:"Remembers everything", items:[
+    "Your songs, settings and position are still there after you come back.",
+    "Longer sliders and a wider layout.",
+    "Volume above 100% really gets louder."]},
+  {v:"1.2", date:"2026-11-18", title:"New look and live sound", items:[
+    "Brand new design with animations.",
+    "Every slider changes the music while it plays.",
+    "Cleaner bass and reverb, 8D rotate and the Daycore preset."]},
+  {v:"1.0", date:"2026-11-18", title:"SlowWave launches", items:[
+    "Slowed + reverb, nightcore, pitch and bass boost, with MP3 and WAV export."]},
+];
+const APP_VERSION = CHANGELOG[0].v;
+const vnum = v => v.split(".").map(Number).reduce((a, x) => a*1000 + x, 0);
+function newsSeen(){ try { return localStorage.getItem("sw2-seen-version"); } catch { return null; } }
+function newsMarkSeen(){ try { localStorage.setItem("sw2-seen-version", APP_VERSION); } catch {} const d = document.querySelector(".news-dot"); if (d) d.hidden = true; }
+function openNews(sinceV){
+  closeNews();
+  const fresh = sinceV ? CHANGELOG.filter(c => vnum(c.v) > vnum(sinceV)) : [];
+  const list = fresh.length ? fresh : CHANGELOG;
+  const fmtD = d => new Date(d + "T12:00:00").toLocaleDateString(undefined, {day:"numeric", month:"short", year:"numeric"});
+  const wrap = document.createElement("div");
+  wrap.className = "news-wrap"; wrap.id = "newsWrap";
+  wrap.innerHTML = `<div class="news" role="dialog" aria-modal="true" aria-labelledby="newsT">
+    <div class="news-top"><div><div class="news-eye">${fresh.length ? "Updated to version " + APP_VERSION : "Version " + APP_VERSION}</div><h2 id="newsT">What's new</h2></div>
+      <button class="icon-btn" id="newsX" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="news-body">${list.map((c, i) => `<section class="nv${i === 0 ? " latest" : ""}" style="--i:${i}">
+        <div class="nvh"><span class="nvv">${c.v}</span><b>${esc(c.title)}</b><span class="nvd">${fmtD(c.date)}</span></div>
+        <ul>${c.items.map(x => `<li>${esc(x)}</li>`).join("")}</ul></section>`).join("")}
+      ${fresh.length && fresh.length < CHANGELOG.length ? `<button class="news-all" id="newsAll">Show all updates</button>` : ""}</div>
+    <div class="news-foot"><button class="btn hot" id="newsOk">Got it</button></div></div>`;
+  document.body.appendChild(wrap);
+  const close = () => { newsMarkSeen(); closeNews(); };
+  wrap.addEventListener("click", e => { if (e.target === wrap) close(); });
+  wrap.querySelector("#newsX").onclick = close; wrap.querySelector("#newsOk").onclick = close;
+  const all = wrap.querySelector("#newsAll"); if (all) all.onclick = () => { newsMarkSeen(); openNews(null); };
+  setTimeout(() => wrap.querySelector("#newsOk").focus(), 50);
+}
+function closeNews(){ const w = document.getElementById("newsWrap"); if (w) w.remove(); }
+document.addEventListener("keydown", e => { if (e.key === "Escape" && document.getElementById("newsWrap")){ newsMarkSeen(); closeNews(); } });
+$("#newsBtn").onclick = () => openNews(newsSeen() && newsSeen() !== APP_VERSION ? newsSeen() : null);
+(() => {
+  const seen = newsSeen();
+  let returning = false; try { returning = !!(localStorage.getItem("sw2-prefs") || localStorage.getItem("sw2-state")); } catch {}
+  if (!seen && !returning){ newsMarkSeen(); return; }      // brand-new visitor: no popup, just remember the version
+  if (!seen){ const d = document.querySelector(".news-dot"); if (d) d.hidden = false; setTimeout(() => openNews("1.8"), 1400); return; }  // used the site before this window existed
+  if (seen !== APP_VERSION){ const d = document.querySelector(".news-dot"); if (d) d.hidden = false; setTimeout(() => openNews(seen), 1400); }
+})();
 
 /* ================= design switching ================= */
 function setSkin(v, fromEl){
