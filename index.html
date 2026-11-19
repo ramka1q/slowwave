@@ -126,7 +126,7 @@ body.dragging .qdrop,body.dragging .stage-empty{border-color:var(--rose);color:v
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{font:500 12px/1 var(--mono);padding:6px 9px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid var(--edge);color:var(--muted)}
 .chip b{color:var(--fg);font-weight:600}
-.transport{display:flex;align-items:center;gap:6px;margin-top:2px}
+.transport{display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;row-gap:10px}
 .sitevol{display:flex;align-items:center;gap:2px;margin-left:6px}
 .sitevol input{width:clamp(80px,9vw,130px)}
 .play{width:60px;height:60px;border-radius:50%;border:0;background:var(--glow);color:#2a0d1c;display:grid;place-items:center;box-shadow:0 10px 34px rgba(255,111,159,.45);transition:transform .15s}
@@ -450,6 +450,29 @@ button.slink{font:inherit;font-size:12.5px;font-weight:700}
 .schead .icon-btn{width:30px;height:30px}
 #scframe{width:100%;height:166px;border:0;border-radius:10px;display:block;background:#fff}
 .scnote{margin:7px 2px 0;font-size:11px;color:var(--dim)}
+.qtools{display:flex;gap:2px}
+.modeBtn.on{color:var(--fg)}
+.modeBtn.withlbl{width:auto;padding:0 10px;gap:6px;display:inline-flex;align-items:center;border-radius:999px;border:1px solid var(--edge2);height:34px}
+.modeBtn.withlbl span{font-size:12px;font-weight:700;white-space:nowrap}
+.abbtn{position:relative;height:34px;border-radius:999px;border:1px solid var(--edge2);background:rgba(255,255,255,.05);padding:0 12px;font-size:12px;font-weight:700;display:inline-grid;align-items:center;user-select:none;-webkit-user-select:none;touch-action:none;transition:background .15s,color .15s,border-color .15s}
+.abbtn span{grid-area:1/1;transition:opacity .15s,transform .2s}
+.abbtn .ab-b{opacity:0;transform:translateY(6px)}
+body.ab-on .abbtn{background:var(--fg);color:#000;border-color:var(--fg)}
+body.ab-on .abbtn .ab-a{opacity:0;transform:translateY(-6px)}
+body.ab-on .abbtn .ab-b{opacity:1;transform:none}
+body.ab-on .deck::after{content:"ORIGINAL \00B7  release to hear your remix";position:absolute;top:14px;left:50%;transform:translateX(-50%);font:600 11px/1 var(--mono);letter-spacing:1.4px;padding:7px 12px;border-radius:999px;background:var(--fg);color:#000;z-index:5;animation:fadeUp .2s both;pointer-events:none;white-space:nowrap}
+.hhead{display:flex;justify-content:space-between;align-items:center;margin:22px 0 10px}
+.hist{display:flex;flex-direction:column;gap:6px}
+.hrow{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--edge);cursor:pointer;transition:background .2s}
+.hrow:hover{background:rgba(255,255,255,.08)}
+.hist.compact{gap:2px;padding:0 4px 4px}.hist.compact .hrow{background:none;border-color:transparent}.hist.compact .hrow:hover{background:rgba(255,255,255,.07)}
+.hart{width:46px;height:46px;border-radius:10px;overflow:hidden;flex:none;display:grid;place-items:center;background:rgba(255,255,255,.06)}
+.hart img{width:100%;height:100%;object-fit:cover}
+.hmain{flex:1;min-width:0}
+.hn{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd{font:500 11.5px/1.4 var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.hk{display:inline-block;margin-right:8px;padding:1px 6px;border-radius:5px;border:1px solid var(--edge2);font-size:10px;color:var(--fg)}
+.hrow .btn{padding:7px 12px;font-size:13px}
 .sfoot{padding:9px 10px 5px;font-size:11px;color:var(--dim);border-top:1px solid var(--edge);margin-top:4px}
 .pill{margin-left:0}
 :root[data-skin=moon] .skin-btn{margin-left:0}
@@ -644,7 +667,7 @@ button.slink{font:inherit;font-size:12.5px;font-weight:700}
   <main class="studio" id="studio">
     <aside class="queue panel">
       <div class="qhead"><h2 class="h">Queue <span class="count" id="qCount">0</span></h2>
-        <button class="icon-btn" id="clearBtn" title="Clear queue" aria-label="Clear queue"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></div>
+        <span class="qtools"><button class="icon-btn modeBtn" data-mode-btn title="Play mode" aria-label="Play mode"></button><button class="icon-btn" id="clearBtn" title="Clear queue" aria-label="Clear queue"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></span></div>
       <div class="qbtns">
         <button class="btn hot" id="addBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add songs</button>
         <span class="split"><button class="btn" id="dlAllBtn" title="Export every song in the queue">All</button><button class="btn arrow" id="dlAllMenu" aria-label="Export all options"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 9l6 7 6-7z"/></svg></button></span>
@@ -668,7 +691,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">"
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 
 /* ================= prefs ================= */
-const prefs = Object.assign({format:"mp3-320", loop:false, autoplay:true, skin:"moon", player:"cassette"},
+const prefs = Object.assign({format:"mp3-320", loop:false, autoplay:true, skin:"moon", player:"cassette", autoNext:true},
   (() => { try { return JSON.parse(localStorage.getItem("sw2-prefs") || "{}"); } catch { return {}; } })());
 const TOK = {c1:"#ff6f9f", c2:"#ffb067", rest:"rgba(255,255,255,.18)"};
 function refreshTok(){ const cs = getComputedStyle(document.documentElement);
@@ -776,7 +799,9 @@ registerProcessor("sw-limiter",LimProc);`;
 const WORKLET_URL = URL.createObjectURL(new Blob([LIMITER_SRC + PLAYER_SRC], {type:"application/javascript"}));
 
 /* ================= audio graph ================= */
-let ac = null, acReady = null, fx = null, analyser = null, siteGain = null;
+let ac = null, acReady = null, fx = null, analyser = null, siteGain = null, xf = null, xfOut = false;
+function xfIn(){ if (!xf) return; const t = ac.currentTime; xf.gain.cancelScheduledValues(t);
+  if (xfOut){ xf.gain.setValueAtTime(0, t); xf.gain.setTargetAtTime(1, t, 0.3); } else xf.gain.setValueAtTime(1, t); xfOut = false; }
 // listening volume for this site only (never touches the exported file)
 const siteVolGain = () => prefs.muted ? 0 : Math.pow((prefs.siteVol ?? 80)/100, 2);
 function applySiteVol(){ if (siteGain) siteGain.gain.setTargetAtTime(siteVolGain(), ac.currentTime, 0.02); }
@@ -787,8 +812,8 @@ function ensureCtx(){
     fx = buildFx(ac, true);
     analyser = ac.createAnalyser(); analyser.fftSize = 4096; analyser.smoothingTimeConstant = 0.78;
     siteGain = ac.createGain(); siteGain.gain.value = siteVolGain();
-    fx.out.connect(analyser); fx.out.connect(siteGain); siteGain.connect(ac.destination);
-    if (cur) applyFx(fx, cur.s, ac, true);
+    xf = ac.createGain(); fx.out.connect(xf); xf.connect(analyser); xf.connect(siteGain); siteGain.connect(ac.destination);
+    if (cur) applyFx(fx, effS(cur), ac, true);
   });
   return acReady;
 }
@@ -898,11 +923,55 @@ const HUES = ["linear-gradient(135deg,#ff6f9f,#ffb067)","linear-gradient(135deg,
 
 const tracks = [];
 let cur = null, playing = false, player = null, playerTrack = null, lastMsgT = 0, uid = Date.now();
+// A/B: while "Original" is held the song plays untouched; the remix settings stay as they are
+let abOrig = false;
+const effS = t => abOrig ? DEF() : t.s;
+/* play mode: queue (in order, stop at end) · all (queue on repeat) · one (repeat this song) */
+const MODES = {
+  queue:{label:"Queue", tip:"Play the queue in order", ico:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h12M3 12h8M3 18h8"/><path d="M15 11v8l6-4z" fill="currentColor"/></svg>'},
+  all:{label:"Repeat all", tip:"Play the queue on repeat", ico:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>'},
+  one:{label:"Repeat one", tip:"Repeat this song", ico:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/><path d="M11 10l1.5-1v6" stroke-width="2"/></svg>'},
+};
+const ORDER = ["queue", "all", "one"];
+const getMode = () => MODES[prefs.mode] ? prefs.mode : (prefs.loop ? "one" : "queue");
+function setMode(m){
+  prefs.mode = m; prefs.loop = m === "one"; prefs.autoNext = m !== "one"; savePrefs();
+  if (player) player.port.postMessage({loop:prefs.loop});
+  if (xfOut) xfIn();
+  syncMode();
+}
+function syncMode(){
+  const m = getMode(), d = MODES[m];
+  document.querySelectorAll("[data-mode-btn]").forEach(b => {
+    b.innerHTML = d.ico + (b.classList.contains("withlbl") ? `<span>${d.label}</span>` : "");
+    b.title = d.tip + " (click to change)"; b.setAttribute("aria-label", "Play mode: " + d.label);
+    b.classList.toggle("on", true);
+  });
+  const sel = document.getElementById("sMode"); if (sel) sel.value = m;
+}
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-mode-btn]"); if (!b) return;
+  const m = ORDER[(ORDER.indexOf(getMode()) + 1) % ORDER.length]; setMode(m); toast(MODES[m].label + ": " + MODES[m].tip.toLowerCase(), 1800); });
+function setAB(on){
+  if (on === abOrig) return;
+  if (cur && playing){ cur.pos = curPos(); lastMsgT = performance.now(); }
+  abOrig = on;
+  if (cur){ if (fx) applyFx(fx, effS(cur), ac, false); if (player && playerTrack === cur) applyPlayer(player, effS(cur), ac, false); }
+  document.body.classList.toggle("ab-on", on);
+  if (cur) renderTimes();
+}
+const AB_KEYS = ["o", "O", "щ", "Щ"];
+document.addEventListener("keydown", e => { if (AB_KEYS.includes(e.key) && !e.repeat && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && view === "studio" && cur) setAB(true); });
+document.addEventListener("keyup", e => { if (AB_KEYS.includes(e.key)) setAB(false); });
+addEventListener("blur", () => setAB(false));
+function nextIndex(t){ const i = tracks.indexOf(t), m = getMode();
+  if (i < 0 || m === "one") return -1;
+  if (i < tracks.length - 1) return i + 1;
+  return m === "all" ? 0 : -1; }
 
 function curPos(){
   if (!cur) return 0;
   if (!playing) return cur.pos;
-  return clamp(cur.pos + (performance.now() - lastMsgT)/1000 * cur.s.speed * 0.98, 0, cur.buffer.duration);
+  return clamp(cur.pos + (performance.now() - lastMsgT)/1000 * effS(cur).speed * 0.98, 0, cur.buffer.duration);
 }
 function destroyPlayer(){
   if (!player) return;
@@ -917,12 +986,15 @@ async function ensurePlayer(){
   const t = cur;
   const node = new AudioWorkletNode(ac, "sw-player", {numberOfInputs:0, numberOfOutputs:1, outputChannelCount:[2],
     processorOptions:{channels:chans(t.buffer), rate:t.buffer.sampleRate, pos:t.pos, playing:false, loop:prefs.loop}});
-  applyPlayer(node, t.s, ac, true);
+  applyPlayer(node, effS(t), ac, true);
   node.connect(fx.input);
   node.port.onmessage = e => {
     const m = e.data;
     if (m.pos != null && playing && playerTrack === t){ t.pos = Math.min(m.pos, t.buffer.duration); lastMsgT = performance.now(); }
-    if (m.ended && playerTrack === t){ playing = false; t.pos = 0; node.port.postMessage({seek:0}); renderTransport(); drawWave(); }
+    if (m.ended && playerTrack === t){ playing = false; t.pos = 0; node.port.postMessage({seek:0}); renderTransport(); drawWave();
+      const ni = nextIndex(t);
+      if (ni >= 0)
+        setTimeout(() => { const nx = tracks[ni]; nx.pos = 0; if (nx !== cur) select(nx); play(); toast("Now playing: " + esc(nx.name.replace(/\.[^.]+$/, "")), 2200); }, 40); }
   };
   player = node; playerTrack = t;
   return node;
@@ -932,7 +1004,8 @@ async function play(){
   const t = cur;
   await ensurePlayer(); if (cur !== t) return;
   if (ac.state !== "running") await ac.resume();
-  applyFx(fx, t.s, ac, true);
+  applyFx(fx, effS(t), ac, true);
+  xfIn();
   if (t.pos >= t.buffer.duration - 0.05) t.pos = 0;
   player.port.postMessage({seek:t.pos, loop:prefs.loop, play:true});
   playing = true; lastMsgT = performance.now();
@@ -949,6 +1022,7 @@ function seek(sec){
   if (!cur) return;
   cur.pos = clamp(sec, 0, cur.buffer.duration); lastMsgT = performance.now();
   if (player && playerTrack === cur) player.port.postMessage({seek:cur.pos});
+  if (xfOut) xfIn();
   drawWave(); renderTimes(); saveState();
 }
 
@@ -963,7 +1037,7 @@ async function addFiles(files, settings, meta){
     try {
       const buffer = await ac.decodeAudioData((await f.arrayBuffer()).slice(0));
       const t = Object.assign({id:uid++, name:f.name, file:f, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), settings || {}), pos:0, hue:HUES[(uid) % HUES.length]}, meta || {});
-      tracks.push(t); storeFile(t); if (!first) first = t;
+      tracks.push(t); storeFile(t); histAdd(t); if (!first) first = t;
     } catch { toast(`Could not read ${esc(f.name)}. It may be damaged or in a format your browser cannot open.`, 4000); await new Promise(r => setTimeout(r, 1400)); }
   }
   hideToast();
@@ -1199,10 +1273,11 @@ function removeTrack(t){
   renderList(); if (!cur) renderStage();
 }
 function select(t){
+  setAB(false);
   if (playing) pause();
   if (playerTrack !== t) destroyPlayer();
   cur = t; renderList(); renderStage();
-  if (fx) applyFx(fx, t.s, ac, true);
+  if (fx) applyFx(fx, effS(t), ac, true);
   persistQueue();
 }
 function step(dir){
@@ -1311,7 +1386,8 @@ function renderStage(){
           <button class="icon-btn" id="prevBtn" aria-label="Previous song">${I.prev}</button>
           <button class="play" id="playBtn" aria-label="Play">${I.play}</button>
           <button class="icon-btn" id="nextBtn" aria-label="Next song">${I.next}</button>
-          <button class="icon-btn${prefs.loop ? " on" : ""}" id="loopBtn" aria-label="Loop" title="Loop">${I.loop}</button>
+          <button class="icon-btn modeBtn withlbl" data-mode-btn title="Play mode" aria-label="Play mode"></button>
+          <button class="abbtn" id="abBtn" title="Hold to hear the original song (or hold the O key)" aria-label="Hold to hear the original"><span class="ab-a">Remix</span><span class="ab-b">Original</span></button>
           <span class="sitevol" title="Listening volume (does not change the exported file)"><button class="icon-btn" id="muteBtn" aria-label="Mute"></button><input type="range" id="siteVol" min="0" max="100" step="1" aria-label="Listening volume"></span>
         </div>
       </div>
@@ -1357,7 +1433,10 @@ function renderStage(){
   svSync();
   sv.oninput = () => { prefs.siteVol = +sv.value; prefs.muted = false; savePrefs(); applySiteVol(); svSync(); };
   mb.onclick = () => { if (!prefs.muted && (prefs.siteVol ?? 80) === 0) prefs.siteVol = 80; else prefs.muted = !prefs.muted; savePrefs(); applySiteVol(); svSync(); };
-  $("#loopBtn").onclick = e => { prefs.loop = !prefs.loop; savePrefs(); e.currentTarget.classList.toggle("on", prefs.loop); if (player) player.port.postMessage({loop:prefs.loop}); };
+  syncMode();
+  const abB = $("#abBtn");
+  abB.addEventListener("pointerdown", e => { try { abB.setPointerCapture(e.pointerId); } catch {} setAB(true); });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => abB.addEventListener(ev, () => setAB(false)));
   mixEl.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => applyPreset(b.dataset.preset));
   mixEl.querySelectorAll("[data-reset]").forEach(b => b.onclick = () => { const p = PARAMS.find(x => x.k === b.dataset.reset); setParam(p.k, p.def); });
   const fs = $("#fmtSel"); fs.value = prefs.format; fs.onchange = () => { prefs.format = fs.value; savePrefs(); };
@@ -1376,8 +1455,9 @@ function setParam(k, v, alsoPitchOn){
 }
 function liveApply(){
   const t = cur;
-  if (fx) applyFx(fx, t.s, ac, false);
-  if (player && playerTrack === t) applyPlayer(player, t.s, ac, false);
+  if (fx) applyFx(fx, effS(t), ac, false);
+  if (player && playerTrack === t) applyPlayer(player, effS(t), ac, false);
+  histUpdateS(t);
   syncControls(); renderListSoon(); persistQueue();
 }
 let listT = 0; const renderListSoon = () => { clearTimeout(listT); listT = setTimeout(renderList, 120); };
@@ -1503,8 +1583,11 @@ function startLoop(){
   lastT = performance.now();
   const f = now => {
     const dt = (now - lastT)/1000; lastT = now;
-    if (playing && cur){ angle = (angle + dt*cur.s.speed*200) % 360; const v = $("#vinyl"); if (v) v.style.transform = `rotate(${angle}deg)`;
-      if (prefs.player === "cassette") updateCassette(curPos()/cur.buffer.duration, dt, cur.s.speed); }
+    if (playing && cur){ const es = effS(cur).speed; angle = (angle + dt*es*200) % 360; const v = $("#vinyl"); if (v) v.style.transform = `rotate(${angle}deg)`;
+      if (prefs.player === "cassette") updateCassette(curPos()/cur.buffer.duration, dt, es);
+      // autoplay: fade out the last moments before moving to the next song
+      if (!xfOut && xf && nextIndex(cur) >= 0 && tracks[nextIndex(cur)] !== cur
+          && (cur.buffer.duration - curPos())/es < 1.7){ xfOut = true; xf.gain.cancelScheduledValues(ac.currentTime); xf.gain.setTargetAtTime(0, ac.currentTime, 0.45); } }
     drawWave(); drawSpec(); renderTimes();
     if (playing || beat > 0.002 || (smooth && smooth.some(x => x > 0.01))) raf = requestAnimationFrame(f); else raf = 0;
   };
@@ -1766,11 +1849,12 @@ function hideToast(){ if (toastEl) toastEl.hidden = true; }
 let dbP = null;
 function idb(){
   return dbP || (dbP = new Promise((res, rej) => {
-    const r = indexedDB.open("slowwave", 2);
+    const r = indexedDB.open("slowwave", 3);
     r.onupgradeneeded = () => { const d = r.result;
       if (!d.objectStoreNames.contains("lib")) d.createObjectStore("lib", {keyPath:"id", autoIncrement:true});
       if (!d.objectStoreNames.contains("queue")) d.createObjectStore("queue", {keyPath:"id"});
-      if (!d.objectStoreNames.contains("files")) d.createObjectStore("files", {keyPath:"id"}); };
+      if (!d.objectStoreNames.contains("files")) d.createObjectStore("files", {keyPath:"id"});
+      if (!d.objectStoreNames.contains("hist")) d.createObjectStore("hist", {keyPath:"id"}); };
     r.onsuccess = () => res(r.result); r.onerror = () => { dbP = null; rej(r.error); };
   }));
 }
@@ -1783,7 +1867,7 @@ function persistQueue(){
   if (restoring) return;
   clearTimeout(persistT);
   persistT = setTimeout(() => {
-    const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t.pos, preview:!!t.preview, fullDur:t.fullDur || 0}));
+    const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t.pos, preview:!!t.preview, fullDur:t.fullDur || 0, histId:t.histId || 0, art:t.art || ""}));
     dbOp("queue", "readwrite", st => { st.clear(); recs.forEach(r => st.put(r)); }).catch(() => {});
   }, 350);
   saveState();
@@ -1797,7 +1881,7 @@ addEventListener("pagehide", () => { if (cur) cur.pos = curPos(); saveState(); p
 document.addEventListener("visibilitychange", () => { if (document.hidden){ saveState(); persistQueueNow(); } });
 function persistQueueNow(){
   if (restoring) return; clearTimeout(persistT);
-  const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t === cur ? curPos() : t.pos, preview:!!t.preview, fullDur:t.fullDur || 0}));
+  const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t === cur ? curPos() : t.pos, preview:!!t.preview, fullDur:t.fullDur || 0, histId:t.histId || 0, art:t.art || ""}));
   dbOp("queue", "readwrite", st => { st.clear(); recs.forEach(r => st.put(r)); }).catch(() => {});
 }
 setInterval(() => { if (playing) saveState(); }, 2000);
@@ -1815,7 +1899,7 @@ async function restoreSession(){
     try {
       const f = await dbOp("files", "readonly", st => st.get(r.id)); if (!f || !f.file) continue;
       const buffer = await ac.decodeAudioData((await f.file.arrayBuffer()).slice(0));
-      tracks.push({id:r.id, name:r.name, file:f.file, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), r.s), pos:clamp(r.pos || 0, 0, buffer.duration), hue:r.hue || HUES[i % HUES.length], preview:!!r.preview, fullDur:r.fullDur || 0});
+      tracks.push({id:r.id, name:r.name, file:f.file, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), r.s), pos:clamp(r.pos || 0, 0, buffer.duration), hue:r.hue || HUES[i % HUES.length], preview:!!r.preview, fullDur:r.fullDur || 0, histId:r.histId || 0, art:r.art || ""});
     } catch {}
   }
   hideToast();
@@ -1850,7 +1934,14 @@ function show(v){
 }
 async function renderLibrary(){
   const pg = $("#page");
-  pg.innerHTML = '<h1>Library</h1><p class="sub">Remixes you saved, with their settings. They live in this browser on this device.</p><div class="lib" id="lib"></div>';
+  pg.innerHTML = `<h1>Library</h1><p class="sub">Your history and saved remixes. They live in this browser on this device.</p>
+    <div class="hhead"><h2 class="h">Recently opened <span class="count">${hist.length}</span></h2>${hist.length ? '<button class="btn" id="histClear">Clear history</button>' : ""}</div>
+    <div class="hist" id="histList">${hist.length ? hist.map(e => histRow(e)).join("") : '<div class="empty-note">Songs and previews you open will show up here.</div>'}</div>
+    <div class="hhead"><h2 class="h">Saved remixes</h2></div><div class="lib" id="lib"></div>`;
+  $("#histList").onclick = e => { const o = e.target.closest("[data-hopen]"), d = e.target.closest("[data-hdel]"), row = e.target.closest("[data-hist]");
+    if (d){ histRemove(+d.dataset.hdel); renderLibrary(); return; }
+    if (o || row) histOpen(+(o ? o.dataset.hopen : row.dataset.hist)); };
+  const hc = $("#histClear"); if (hc) hc.onclick = () => { hist.forEach(x => dbOp("hist", "readwrite", st => st.delete(x.id)).catch(() => {})); hist = []; histSave(); renderLibrary(); };
   let items = []; try { items = await libOp("readonly", st => st.getAll()) || []; } catch {}
   const el = $("#lib");
   if (!items.length){ el.innerHTML = '<div class="empty-note">Nothing saved yet. In the Studio, press the heart next to Export.</div>'; return; }
@@ -1876,10 +1967,11 @@ function renderSettings(){
       </div></div>
     <label class="row" for="sFmt"><span>Export format<small>Used by the Export button and “All”.</small></span><select id="sFmt"><option value="mp3-320">MP3 · 320 kbps</option><option value="mp3-192">MP3 · 192 kbps</option><option value="mp3-128">MP3 · 128 kbps</option><option value="wav">WAV · lossless</option></select></label>
     <div class="row"><span>Play songs as soon as they load</span><button class="toggle" id="sAuto" aria-label="Autoplay"></button></div>
-    <div class="row"><span>Loop the current song</span><button class="toggle" id="sLoop" aria-label="Loop"></button></div></div>`;
+    <label class="row" for="sMode"><span>Play mode<small>What happens when a song ends.</small></span><select id="sMode"><option value="queue">Queue: play in order</option><option value="all">Repeat all: queue on repeat</option><option value="one">Repeat one: same song again</option></select></label></div>`;
   const f = $("#sFmt"); f.value = prefs.format; f.onchange = () => { prefs.format = f.value; savePrefs(); };
   const sw = (id, key) => { const el = $(id), upd = () => { el.classList.toggle("on", prefs[key]); el.setAttribute("aria-pressed", prefs[key]); }; upd(); el.onclick = () => { prefs[key] = !prefs[key]; savePrefs(); upd(); if (key === "loop" && player) player.port.postMessage({loop:prefs.loop}); }; };
-  sw("#sAuto", "autoplay"); sw("#sLoop", "loop");
+  sw("#sAuto", "autoplay");
+  const sm = $("#sMode"); sm.value = getMode(); sm.onchange = () => setMode(sm.value);
   const pick = (id, key, fn) => { const box = $(id), upd = () => box.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === prefs[key]));
     upd(); box.onclick = e => { const b = e.target.closest("button"); if (!b) return; fn(b.dataset.v, b); upd(); }; };
   pick("#pSkin", "skin", (v, b) => { setSkin(v, b); setTimeout(() => { if (view === "settings") renderSettings(); }, 120); });
@@ -2355,7 +2447,14 @@ function previewToggle(i){
 function renderSearch(){
   const box = $("#sres"), inp = $("#q"); if (!box) return;
   const q = inp.value.trim();
-  if (!q){ box.hidden = true; return; }
+  if (!q){
+    if (document.activeElement === inp && hist.length){
+      box.hidden = false;
+      box.innerHTML = `<div class="syth" style="padding:10px 10px 6px">Recently opened</div><div class="hist compact">${hist.slice(0, 6).map(e => histRow(e, true)).join("")}</div><div class="sfoot">Type to search Apple Music, Deezer and YouTube · All history is in Library</div>`;
+      box.querySelectorAll("[data-hist]").forEach(r => r.onclick = ev => { ev.stopPropagation(); histOpen(+r.dataset.hist); });
+    } else box.hidden = true;
+    return;
+  }
   box.hidden = false;
   if (sState.sc){
     const sc = sState.sc;
@@ -2402,7 +2501,7 @@ async function loadPreviewToStudio(i){
     const blob = await res.blob();
     const ext = /\.m4a|aac/i.test(r.preview) ? "m4a" : "mp3";
     const name = (r.artist + " - " + r.title).replace(/[\/:*?"<>|]+/g, " ") + " (preview)." + ext;
-    await addFiles([new File([blob], name, {type:ext === "m4a" ? "audio/mp4" : "audio/mpeg"})], undefined, {preview:true, fullDur:r.dur || 0});
+    await addFiles([new File([blob], name, {type:ext === "m4a" ? "audio/mp4" : "audio/mpeg"})], undefined, {preview:true, fullDur:r.dur || 0, art:r.art || "", artist:r.artist, title:r.title});
   } catch { toast("Could not load this preview. Try another song.", 3000); }
 }
 const SC_RE = /^(https?:\/\/)?(www\.|m\.|on\.)?soundcloud\.(com|app\.goo\.gl)\/\S+/i;
@@ -2452,7 +2551,7 @@ function runSearch(q){
     sState.sc = null;
     sT = setTimeout(() => runSearch(q), 230);
   });
-  inp.addEventListener("focus", () => { if (inp.value.trim()) renderSearch(); });
+  inp.addEventListener("focus", () => renderSearch());
   inp.addEventListener("keydown", e => {
     const n = sState.results.length;
     if (e.key === "ArrowDown" && n){ e.preventDefault(); sState.sel = (sState.sel + 1) % n; renderSearch(); }
@@ -2476,6 +2575,45 @@ function runSearch(q){
   });
 })();
 
+/* ================= history (recently opened songs and previews) ================= */
+const HIST_MAX = 20;
+let hist = (() => { try { return JSON.parse(localStorage.getItem("sw2-hist") || "[]"); } catch { return []; } })();
+const histSave = () => { try { localStorage.setItem("sw2-hist", JSON.stringify(hist)); } catch {} };
+function histAdd(t){
+  let e = t.histId ? hist.find(x => x.id === t.histId) : null;
+  if (!e) e = hist.find(x => x.name === t.name && x.size === (t.file && t.file.size));
+  if (e){ hist = [e, ...hist.filter(x => x !== e)]; e.at = Date.now(); t.histId = e.id; histSave(); return; }
+  e = {id:Date.now() + Math.floor(Math.random()*1000), name:t.name, size:t.file ? t.file.size : 0, kind:t.preview ? "preview" : "file",
+       s:Object.assign({}, t.s), at:Date.now(), art:t.art || "", fullDur:t.fullDur || 0, dur:t.buffer ? t.buffer.duration : 0};
+  t.histId = e.id; hist.unshift(e);
+  dbOp("hist", "readwrite", st => st.put({id:e.id, file:t.file})).catch(() => {});
+  while (hist.length > HIST_MAX){ const old = hist.pop(); dbOp("hist", "readwrite", st => st.delete(old.id)).catch(() => {}); }
+  histSave();
+}
+let histT = 0;
+function histUpdateS(t){ if (!t || !t.histId) return; clearTimeout(histT);
+  histT = setTimeout(() => { const e = hist.find(x => x.id === t.histId); if (e){ e.s = Object.assign({}, t.s); histSave(); } }, 400); }
+async function histOpen(id){
+  const e = hist.find(x => x.id === id); if (!e) return;
+  const inQueue = tracks.find(t => t.histId === id);
+  show("studio"); $("#sres").hidden = true;
+  if (inQueue){ select(inQueue); return; }
+  try {
+    const rec = await dbOp("hist", "readonly", st => st.get(id)); if (!rec || !rec.file) throw new Error();
+    await addFiles([new File([rec.file], e.name, {type:rec.file.type || "audio/mpeg"})], e.s, {preview:e.kind === "preview", fullDur:e.fullDur, art:e.art, histId:e.id});
+  } catch { toast("This song is no longer saved. Open the file again.", 3000); hist = hist.filter(x => x.id !== id); histSave(); }
+}
+function histRemove(id){ hist = hist.filter(x => x.id !== id); histSave(); dbOp("hist", "readwrite", st => st.delete(id)).catch(() => {}); }
+const ago = ts => { const s = (Date.now() - ts)/1000; if (s < 60) return "just now"; if (s < 3600) return Math.floor(s/60) + " min ago"; if (s < 86400) return Math.floor(s/3600) + " h ago"; const d = Math.floor(s/86400); return d === 1 ? "yesterday" : d + " days ago"; };
+function histRow(e, compact){
+  const nm = e.name.replace(/\.[^.]+$/, "").replace(/ \(preview\)$/, "");
+  return `<div class="hrow" data-hist="${e.id}">
+    <div class="hart">${e.art ? `<img src="${esc(e.art)}" alt="" loading="lazy">` : `<span class="disc"></span>`}</div>
+    <div class="hmain"><div class="hn">${esc(nm)}</div><div class="hd"><span class="hk ${e.kind}">${e.kind === "preview" ? "30 s preview" : "File"}</span>${esc(summary(Object.assign(DEF(), e.s)))} · ${ago(e.at)}</div></div>
+    ${compact ? "" : `<button class="btn hot" data-hopen="${e.id}">Open</button><button class="icon-btn" data-hdel="${e.id}" aria-label="Remove from history" title="Remove"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`}
+  </div>`;
+}
+
 /* ================= design switching ================= */
 function setSkin(v, fromEl){
   if (v === prefs.skin) return;
@@ -2493,7 +2631,7 @@ function setSkin(v, fromEl){
 $("#skinBtn").onclick = e => setSkin(prefs.skin === "moon" ? "aurora" : "moon", e.currentTarget);
 refreshTok();
 
-renderList(); renderStage(); moveTabInd();
+renderList(); renderStage(); moveTabInd(); syncMode();
 restoreSession();
 if (location.hash === "#convert") show("convert");
 window.__sw = {conv, cp, convertOne, addConvFiles, show, tracks, get cur(){ return cur; }, get playing(){ return playing; }, addFiles, renderTrack, encodeWav, encodeMp3, play, pause, curPos, setParam, applyPreset, seek};
