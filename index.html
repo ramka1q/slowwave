@@ -1703,7 +1703,7 @@ function setupSpec(){
   const fit = () => { const d = devicePixelRatio || 1; spec.width = Math.round(spec.clientWidth*d); spec.height = Math.round(spec.clientHeight*d); drawSpec(); };
   fit(); new ResizeObserver(fit).observe(spec);
 }
-let beat = 0;
+let beat = 0, lastBeatStr = "";
 function drawSpec(){
   if (!sctx || !spec.isConnected) return;
   const W = spec.width, H = spec.height, d = devicePixelRatio || 1, bars = Math.max(24, Math.min(72, Math.floor(W/(9*d))));
@@ -1724,7 +1724,8 @@ function drawSpec(){
     for (let j=1;j<Math.floor(140/ny*nb);j++) bass = Math.max(bass, fbuf[j]/255);
   } else for (let i=0;i<bars;i++) smooth[i] *= 0.9;
   beat += (Math.pow(bass, 3) - beat)*0.25;
-  document.documentElement.style.setProperty("--beat", beat.toFixed(3));
+  const bs = beat.toFixed(3);
+  if (bs !== lastBeatStr){ lastBeatStr = bs; document.documentElement.style.setProperty("--beat", bs); }
   const gw = W/bars, bw = Math.max(2*d, gw*0.55);
   const g = sctx.createLinearGradient(0, H, 0, 0); g.addColorStop(0, TOK.c1); g.addColorStop(1, TOK.c2);
   sctx.fillStyle = g;
@@ -1900,15 +1901,19 @@ function moonScene(x, t, dt, W, H, b, S){
 const LIT_SEL = ".sbox,.fmt,.crow,.btn,.preset,.icon-btn,.play,.chip,.tabs button,.track,.ctl,.plus-add,.skin-btn,.pill,.val,.kebab,.export select";
 setInterval(() => {
   const els = document.querySelectorAll(LIT_SEL);
-  if (!isMoon() || !rayState){ els.forEach(e => { if (e.style.getPropertyValue("--lit")) e.style.removeProperty("--lit"); }); return; }
+  if (!isMoon() || !rayState){ els.forEach(e => { e._lit = undefined; if (e.style.getPropertyValue("--lit")) e.style.removeProperty("--lit"); }); return; }
+  if (document.hidden) return;
   const {cx, cy, L, rays} = rayState;
-  els.forEach(el => {
-    const r = el.getBoundingClientRect(); if (!r.width) return;
+  // read every position first, then write: one layout per pass instead of one per button
+  const rects = Array.from(els, el => el.getBoundingClientRect());
+  els.forEach((el, i) => {
+    const r = rects[i]; if (!r.width) return;
     const ex = r.left + r.width/2, ey = r.top + r.height/2, dist = Math.hypot(ex - cx, ey - cy), ang = Math.atan2(ey - cy, ex - cx);
     const extra = Math.min(r.width, r.height)/2/Math.max(40, dist);
     let lit = 0;
     for (const ry of rays){ const d = (ang - ry.ang)/(ry.w + extra); lit += Math.exp(-d*d)*ry.a*5.5; }
-    el.style.setProperty("--lit", Math.min(1, lit*Math.max(0.25, 1 - dist/L)).toFixed(2));
+    const v = Math.min(1, lit*Math.max(0.25, 1 - dist/L)).toFixed(2);
+    if (el._lit !== v){ el._lit = v; el.style.setProperty("--lit", v); }
   });
 }, 90);
 
@@ -1931,7 +1936,7 @@ setInterval(() => {
   const draw = now => {
     const t = (now - t0)/1000, dt = Math.min(0.05, (now - last)/1000); last = now;
     const wantS = isMoon() ? 0.5 : 0.6; if (wantS !== S){ S = wantS; fit(); }
-    const W = c.width, H = c.height, b = +getComputedStyle(document.documentElement).getPropertyValue("--beat") || 0;
+    const W = c.width, H = c.height, b = lastBeatStr ? +lastBeatStr || 0 : 0;   // same value as --beat, without a style recalc every frame
     const moon = isMoon();
     x.globalCompositeOperation = "source-over";
     x.fillStyle = moon ? "#000" : "#0c0915"; x.fillRect(0, 0, W, H);
@@ -2782,6 +2787,9 @@ function histRow(e, compact){
 /* ================= what's new ================= */
 // Add a new entry at the TOP of this list with every update. The newest version is CHANGELOG[0].
 const CHANGELOG = [
+  {v:"1.12", date:"2026-11-19", title:"Smoother animations", items:[
+    "The moon, light beams and glowing buttons use much less CPU, so the site runs smoother on high refresh rate screens and busy PCs.",
+    "Nothing looks different."]},
   {v:"1.11", date:"2026-11-19", title:"New effects", items:[
     "Brightness brings back clear highs that get lost when a song is slowed.",
     "Another room makes the music sound like it plays behind a wall.",
