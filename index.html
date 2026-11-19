@@ -1437,7 +1437,7 @@ function renderStage(){
     <div class="presets">${PRESETS.map((p, i) => `<button class="preset" data-preset="${p.id}" style="--i:${i}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p.ico}</svg>${p.name}</button>`).join("")}</div>
     <div class="ctls">${PARAMS.map((p, i) => `
       <div class="ctl" style="--i:${i + 6}">
-        <div class="ctl-top"><label for="r-${p.k}">${p.label}</label>${p.k === "pitch" ? `<button class="toggle" id="pitchSw" aria-label="Set pitch separately from speed" aria-pressed="false"></button><span class="beta">KEEP KEY</span>` : `<button class="toggle" data-ptog="${p.k}" aria-label="Turn ${p.label} on or off" aria-pressed="true"></button>`}
+        <div class="ctl-top"><label for="r-${p.k}">${p.label}</label>${p.k === "pitch" ? `<button class="toggle" id="pitchSw" aria-label="Set pitch separately from speed" aria-pressed="false"></button>` : `<button class="toggle" data-ptog="${p.k}" aria-label="Turn ${p.label} on or off" aria-pressed="true"></button>`}
           <input class="val" id="v-${p.k}" aria-label="${p.label} value" inputmode="decimal" autocomplete="off">
           <button class="rst" data-reset="${p.k}" aria-label="Reset ${p.label}" title="Reset">${I.reset}</button></div>
         <input type="range" id="r-${p.k}" min="${p.min}" max="${p.max}" step="${p.step}" value="${s[p.k]}">
@@ -2669,7 +2669,8 @@ const CHANGELOG = [
     "Every effect now has an on/off switch, like Pitch: Speed, Reverb, Bass boost, 8D rotate and Track volume.",
     "A switched-off effect keeps its value, so turning it back on brings your setting back.",
     "Moving a switched-off slider turns it on again.",
-    "Switched-off effects are left out of the export too."]},
+    "Switched-off effects are left out of the export too.",
+    "Removed the KEEP KEY label next to Pitch."]},
   {v:"1.9", date:"2026-11-19", title:"Compare, play modes and history", items:[
     "Hold the Remix button (or the O key) to hear the original song, release to hear your remix.",
     "Play mode button: Queue plays songs in order, Repeat all loops the queue, Repeat one loops a single song.",
