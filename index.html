@@ -499,6 +499,10 @@ body.ab-on .deck::after{content:"ORIGINAL \00B7  release to hear your remix";pos
 .news-foot{padding:12px 22px 20px;display:flex;justify-content:flex-end}
 .news-foot .btn{padding:11px 22px}
 @media (max-width:860px){.news-btn span{display:none}.news-btn{width:34px;padding:0;justify-content:center}}
+.ctl.is-off input[type=range]{opacity:.32}
+.ctl.is-off .scale{opacity:.5}
+.ctl.is-off .ctl-top label{color:var(--muted)}
+.ctl-top .toggle{margin-left:2px}
 .sfoot{padding:9px 10px 5px;font-size:11px;color:var(--dim);border-top:1px solid var(--edge);margin-top:4px}
 .pill{margin-left:0}
 :root[data-skin=moon] .skin-btn{margin-left:0}
@@ -952,7 +956,10 @@ const tracks = [];
 let cur = null, playing = false, player = null, playerTrack = null, lastMsgT = 0, uid = Date.now();
 // A/B: while "Original" is held the song plays untouched; the remix settings stay as they are
 let abOrig = false;
-const effS = t => abOrig ? DEF() : t.s;
+const TOGG = ["speed", "reverb", "bass", "d8", "volume"];
+const isOn = (s, k) => !s.on || s.on[k] !== false;
+function applied(s){ const o = Object.assign({}, s), d = DEF(); TOGG.forEach(k => { if (!isOn(s, k)) o[k] = d[k]; }); return o; }
+const effS = t => abOrig ? DEF() : applied(t.s);
 /* play mode: queue (in order, stop at end) · all (queue on repeat) · one (repeat this song) */
 const MODES = {
   queue:{label:"Queue", tip:"Play the queue in order", ico:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h12M3 12h8M3 18h8"/><path d="M15 11v8l6-4z" fill="currentColor"/></svg>'},
@@ -1133,7 +1140,7 @@ function jsEQ(L, R, s, sr){
   }
 }
 async function renderTrack(t, onStage){
-  const s = Object.assign({}, t.s), b = t.buffer, sr = b.sampleRate, m = mix(s);
+  const s = applied(t.s), b = t.buffer, sr = b.sampleRate, m = mix(s);
   onStage && onStage("Remixing", 0.1);
   const dryLen = Math.ceil(b.duration/s.speed*sr) + 2048;
   // same player algorithm as the live worklet, run directly (offline worklets are very slow in Chrome)
@@ -1209,7 +1216,7 @@ async function encodeMp3(b, kbps, onProg){
   return new Blob(parts, {type:"audio/mpeg"});
 }
 function outName(t, ext){
-  const base = t.name.replace(/\.[^.]+$/, ""), s = t.s, tags = [];
+  const base = t.name.replace(/\.[^.]+$/, ""), s = applied(t.s), tags = [];
   if (s.speed < 1) tags.push("slowed"); else if (s.speed > 1) tags.push("sped up");
   if (s.reverb > 0) tags.push("reverb");
   if (s.pitchOn && s.pitch) tags.push((s.pitch > 0 ? "+" : "") + s.pitch + "st");
@@ -1264,6 +1271,7 @@ const I = {
 
 /* ================= queue ================= */
 function summary(s){
+  s = applied(s);
   const p = [`${(+s.speed).toFixed(2)}×`];
   if (s.reverb) p.push(`rev ${s.reverb}%`);
   if (s.pitchOn && s.pitch) p.push(`${s.pitch > 0 ? "+" : ""}${s.pitch}st`);
@@ -1315,6 +1323,7 @@ function step(dir){
 
 /* ================= cassette ================= */
 function mixName(s){
+  s = applied(s);
   const t = [];
   if (s.speed < 1) t.push("SLOWED"); else if (s.speed > 1) t.push("SPED UP");
   if (s.reverb > 0) t.push("REVERB"); if (s.bass > 0) t.push("BASS"); if (s.d8 > 0) t.push("8D");
@@ -1428,7 +1437,7 @@ function renderStage(){
     <div class="presets">${PRESETS.map((p, i) => `<button class="preset" data-preset="${p.id}" style="--i:${i}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p.ico}</svg>${p.name}</button>`).join("")}</div>
     <div class="ctls">${PARAMS.map((p, i) => `
       <div class="ctl" style="--i:${i + 6}">
-        <div class="ctl-top"><label for="r-${p.k}">${p.label}</label>${p.k === "pitch" ? `<button class="toggle" id="pitchSw" aria-label="Set pitch separately from speed" aria-pressed="false"></button><span class="beta">KEEP KEY</span>` : ""}
+        <div class="ctl-top"><label for="r-${p.k}">${p.label}</label>${p.k === "pitch" ? `<button class="toggle" id="pitchSw" aria-label="Set pitch separately from speed" aria-pressed="false"></button><span class="beta">KEEP KEY</span>` : `<button class="toggle" data-ptog="${p.k}" aria-label="Turn ${p.label} on or off" aria-pressed="true"></button>`}
           <input class="val" id="v-${p.k}" aria-label="${p.label} value" inputmode="decimal" autocomplete="off">
           <button class="rst" data-reset="${p.k}" aria-label="Reset ${p.label}" title="Reset">${I.reset}</button></div>
         <input type="range" id="r-${p.k}" min="${p.min}" max="${p.max}" step="${p.step}" value="${s[p.k]}">
@@ -1452,6 +1461,7 @@ function renderStage(){
     v.addEventListener("change", () => { const x = parseFloat(String(v.value).replace(",", ".")); if (!isNaN(x)) setParam(p.k, clamp(x, p.min, p.max), p.k === "pitch"); });
   });
   $("#pitchSw").onclick = () => setParam("pitchOn", !cur.s.pitchOn);
+  mixEl.querySelectorAll("[data-ptog]").forEach(b => b.onclick = () => setOn(b.dataset.ptog, !isOn(cur.s, b.dataset.ptog)));
   $("#playBtn").onclick = toggle;
   $("#prevBtn").onclick = () => curPos() > 3 ? seek(0) : step(-1);
   $("#nextBtn").onclick = () => step(1);
@@ -1476,9 +1486,16 @@ function setParam(k, v, alsoPitchOn){
   const t = cur; if (!t) return;
   if (k === "speed" && playing) { t.pos = curPos(); lastMsgT = performance.now(); }
   t.s[k] = v;
+  if (TOGG.includes(k) && !isOn(t.s, k)) t.s.on = Object.assign({}, t.s.on, {[k]:true});
   if (alsoPitchOn) t.s.pitchOn = true;
   liveApply();
   const ve = $("#v-" + k); if (ve){ ve.classList.remove("bump"); void ve.offsetWidth; ve.classList.add("bump"); }
+}
+function setOn(k, on){
+  const t = cur; if (!t) return;
+  if (k === "speed" && playing){ t.pos = curPos(); lastMsgT = performance.now(); }
+  t.s.on = Object.assign({}, t.s.on, {[k]:on});
+  liveApply();
 }
 function liveApply(){
   const t = cur;
@@ -1492,7 +1509,7 @@ function applyPreset(id){
   const p = PRESETS.find(x => x.id === id); if (!cur) return;
   if (cur.s && playing){ cur.pos = curPos(); lastMsgT = performance.now(); }
   if (!p.s) cur.s = Object.assign(DEF(), {volume:cur.s.volume});
-  else Object.assign(cur.s, p.s);
+  else { Object.assign(cur.s, p.s); cur.s.on = Object.assign({}, cur.s.on); Object.keys(p.s).forEach(k => { if (TOGG.includes(k)) cur.s.on[k] = true; }); }
   liveApply();
 }
 function syncControls(){
@@ -1504,17 +1521,21 @@ function syncControls(){
     if (p.k === "pitch") r.disabled = !s.pitchOn;
     if (document.activeElement !== v){
       if (p.k === "pitch" && !s.pitchOn){ v.value = "follows"; v.classList.add("off"); }
+      else if (TOGG.includes(p.k) && !isOn(s, p.k)){ v.value = "off"; v.classList.add("off"); }
       else { v.value = p.fmt(s[p.k]); v.classList.remove("off"); }
     }
+    if (TOGG.includes(p.k)){ const on = isOn(s, p.k), tg = document.querySelector(`[data-ptog="${p.k}"]`);
+      if (tg){ tg.classList.toggle("on", on); tg.setAttribute("aria-pressed", on); }
+      r.closest(".ctl").classList.toggle("is-off", !on); }
   });
   const sw = $("#pitchSw"); if (sw){ sw.classList.toggle("on", s.pitchOn); sw.setAttribute("aria-pressed", s.pitchOn); }
   document.querySelectorAll("[data-preset]").forEach(b => {
     const p = PRESETS.find(x => x.id === b.dataset.preset);
     b.classList.toggle("on", !!p.s && Object.keys(p.s).every(k => s[k] === p.s[k]));
   });
-  const semis = 12*Math.log2(pitchRatio(s));
+  const es = applied(s), semis = 12*Math.log2(pitchRatio(es));
   const chips = $("#chips");
-  if (chips) chips.innerHTML = (cur.preview ? `<span class="chip pvchip"><b>${mmss(cur.buffer.duration)}</b> of ${cur.fullDur ? mmss(cur.fullDur) : "the song"} · preview</span>` : "") + `<span class="chip"><b>${(+s.speed).toFixed(2)}×</b> tempo</span><span class="chip"><b>${semis >= 0 ? "+" : "−"}${Math.abs(semis).toFixed(1)}</b> st key</span><span class="chip" id="lenChip"></span>`;
+  if (chips) chips.innerHTML = (cur.preview ? `<span class="chip pvchip"><b>${mmss(cur.buffer.duration)}</b> of ${cur.fullDur ? mmss(cur.fullDur) : "the song"} · preview</span>` : "") + `<span class="chip"><b>${(+es.speed).toFixed(2)}×</b> tempo</span><span class="chip"><b>${semis >= 0 ? "+" : "−"}${Math.abs(semis).toFixed(1)}</b> st key</span><span class="chip" id="lenChip"></span>`;
   const csub = document.getElementById("cassSub"); if (csub) csub.textContent = mixName(s);
   renderTimes(); drawWave();
 }
@@ -2644,6 +2665,11 @@ function histRow(e, compact){
 /* ================= what's new ================= */
 // Add a new entry at the TOP of this list with every update. The newest version is CHANGELOG[0].
 const CHANGELOG = [
+  {v:"1.10", date:"2026-11-19", title:"On / off switches", items:[
+    "Every effect now has an on/off switch, like Pitch: Speed, Reverb, Bass boost, 8D rotate and Track volume.",
+    "A switched-off effect keeps its value, so turning it back on brings your setting back.",
+    "Moving a switched-off slider turns it on again.",
+    "Switched-off effects are left out of the export too."]},
   {v:"1.9", date:"2026-11-19", title:"Compare, play modes and history", items:[
     "Hold the Remix button (or the O key) to hear the original song, release to hear your remix.",
     "Play mode button: Queue plays songs in order, Repeat all loops the queue, Repeat one loops a single song.",
