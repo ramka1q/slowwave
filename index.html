@@ -426,6 +426,19 @@ body.dragging .conv-drop{border-color:var(--fg);background:rgba(255,255,255,.05)
 .s-studio:hover{background:#e6e6e6}
 .pvchip{border-color:rgba(255,255,255,.4)!important;color:var(--fg)!important}
 .pvnote{grid-column:1/-1;margin:0;font-size:12px;color:var(--muted)}
+.spv{display:flex;align-items:center;gap:8px;margin-top:6px}
+.spv span{font:600 10.5px/1 var(--mono);color:var(--muted);flex:none}
+.spvbar{position:relative;flex:1;max-width:190px;height:2px;border-radius:2px;background:rgba(255,255,255,.14)}
+.spvbar i{position:absolute;left:0;top:-1px;height:4px;width:var(--w);border-radius:3px;background:#fff;box-shadow:0 0 8px rgba(255,255,255,.75)}
+.spvbar b{position:absolute;top:50%;left:calc(var(--w) * var(--pp,0));width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.18),0 0 12px #fff;opacity:0;transition:opacity .2s}
+.sitem:has(.splay svg rect) .spvbar b{opacity:1}
+:root:not([data-skin=moon]) .spvbar i{background:var(--glow);box-shadow:0 0 8px rgba(255,111,159,.7)}
+.pvstrip{display:flex;align-items:center;gap:12px;margin-top:-6px}
+.pvstrip span{font-size:12px;color:var(--muted)}
+.pvline{position:relative;width:min(240px,40%);height:2px;border-radius:2px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.3) 0 4px,transparent 4px 8px);flex:none}
+.pvline i{position:absolute;left:0;top:-2px;height:6px;width:var(--w);border-radius:4px;background:#fff;box-shadow:0 0 10px rgba(255,255,255,.8);animation:pvglow 2.4s ease-in-out infinite}
+:root:not([data-skin=moon]) .pvline i{background:var(--glow)}
+@keyframes pvglow{50%{box-shadow:0 0 18px #fff}}
 .sfoot{padding:9px 10px 5px;font-size:11px;color:var(--dim);border-top:1px solid var(--edge);margin-top:4px}
 .pill{margin-left:0}
 :root[data-skin=moon] .skin-btn{margin-left:0}
@@ -1288,7 +1301,8 @@ function renderStage(){
     </div>
     <div class="specbox"><canvas class="spec" id="spec" aria-hidden="true"></canvas></div>
     <div class="wavebox"><canvas class="wave" id="wave" aria-label="Waveform. Click or drag to jump."></canvas></div>
-    <div class="times"><span><b id="tNow">0:00</b></span><span id="tEnd">0:00</span></div>`;
+    <div class="times"><span><b id="tNow">0:00</b></span><span id="tEnd">0:00</span></div>
+    ${t.preview ? `<div class="pvstrip"><div class="pvline" style="--w:${t.fullDur ? Math.min(100, t.buffer.duration/t.fullDur*100).toFixed(1) : 100}%"><i></i></div><span>You hear a ${mmss(t.buffer.duration)} preview${t.fullDur ? ` of the full ${mmss(t.fullDur)} song` : ""}. Add your own file for the whole track.</span></div>` : ""}`;
   mixEl.innerHTML = `
     <div class="mix-head"><h2 class="h">Mix</h2><span class="live" title="Changes apply instantly"><i></i>LIVE</span></div>
     <div class="presets">${PRESETS.map((p, i) => `<button class="preset" data-preset="${p.id}" style="--i:${i}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p.ico}</svg>${p.name}</button>`).join("")}</div>
@@ -1376,7 +1390,7 @@ function syncControls(){
   });
   const semis = 12*Math.log2(pitchRatio(s));
   const chips = $("#chips");
-  if (chips) chips.innerHTML = (cur.preview ? `<span class="chip pvchip"><b>30 s</b> preview</span>` : "") + `<span class="chip"><b>${(+s.speed).toFixed(2)}×</b> tempo</span><span class="chip"><b>${semis >= 0 ? "+" : "−"}${Math.abs(semis).toFixed(1)}</b> st key</span><span class="chip" id="lenChip"></span>`;
+  if (chips) chips.innerHTML = (cur.preview ? `<span class="chip pvchip"><b>${mmss(cur.buffer.duration)}</b> of ${cur.fullDur ? mmss(cur.fullDur) : "the song"} · preview</span>` : "") + `<span class="chip"><b>${(+s.speed).toFixed(2)}×</b> tempo</span><span class="chip"><b>${semis >= 0 ? "+" : "−"}${Math.abs(semis).toFixed(1)}</b> st key</span><span class="chip" id="lenChip"></span>`;
   const csub = document.getElementById("cassSub"); if (csub) csub.textContent = mixName(s);
   renderTimes(); drawWave();
 }
@@ -1752,7 +1766,7 @@ function persistQueue(){
   if (restoring) return;
   clearTimeout(persistT);
   persistT = setTimeout(() => {
-    const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t.pos, preview:!!t.preview}));
+    const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t.pos, preview:!!t.preview, fullDur:t.fullDur || 0}));
     dbOp("queue", "readwrite", st => { st.clear(); recs.forEach(r => st.put(r)); }).catch(() => {});
   }, 350);
   saveState();
@@ -1766,7 +1780,7 @@ addEventListener("pagehide", () => { if (cur) cur.pos = curPos(); saveState(); p
 document.addEventListener("visibilitychange", () => { if (document.hidden){ saveState(); persistQueueNow(); } });
 function persistQueueNow(){
   if (restoring) return; clearTimeout(persistT);
-  const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t === cur ? curPos() : t.pos, preview:!!t.preview}));
+  const recs = tracks.map((t, i) => ({id:t.id, order:i, name:t.name, s:Object.assign({}, t.s), hue:t.hue, pos:t === cur ? curPos() : t.pos, preview:!!t.preview, fullDur:t.fullDur || 0}));
   dbOp("queue", "readwrite", st => { st.clear(); recs.forEach(r => st.put(r)); }).catch(() => {});
 }
 setInterval(() => { if (playing) saveState(); }, 2000);
@@ -1784,7 +1798,7 @@ async function restoreSession(){
     try {
       const f = await dbOp("files", "readonly", st => st.get(r.id)); if (!f || !f.file) continue;
       const buffer = await ac.decodeAudioData((await f.file.arrayBuffer()).slice(0));
-      tracks.push({id:r.id, name:r.name, file:f.file, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), r.s), pos:clamp(r.pos || 0, 0, buffer.duration), hue:r.hue || HUES[i % HUES.length], preview:!!r.preview});
+      tracks.push({id:r.id, name:r.name, file:f.file, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), r.s), pos:clamp(r.pos || 0, 0, buffer.duration), hue:r.hue || HUES[i % HUES.length], preview:!!r.preview, fullDur:r.fullDur || 0});
     } catch {}
   }
   hideToast();
@@ -2317,6 +2331,7 @@ function previewToggle(i){
   if (playing) pause();
   const a = new Audio(r.preview); a.volume = Math.min(1, siteVolGain() || 0.8);
   a.onended = () => { sState.playing = -1; renderSearch(); };
+  a.ontimeupdate = () => { const h = document.querySelector(`[data-head="${i}"]`); if (h) h.parentElement.style.setProperty("--pp", Math.min(1, a.currentTime/(a.duration || 30)).toFixed(3)); };
   a.play().catch(() => toast("This preview could not play. Try another song.", 2500));
   sState.audio = a; sState.playing = i; renderSearch();
 }
@@ -2342,6 +2357,7 @@ function renderSearch(){
         <div class="smain">
           <div class="st">${esc(r.title)}${r.explicit ? ' <span class="sexp">E</span>' : ""}</div>
           <div class="sa">${esc(r.artist)}${r.album ? " · " + esc(r.album) : ""}${r.year ? " · " + esc(r.year) : ""}</div>
+          ${r.preview && r.dur ? `<div class="spv" title="The preview is 30 seconds of the ${mmss(r.dur)} song"><div class="spvbar" style="--w:${Math.min(100, 30/r.dur*100).toFixed(1)}%"><i></i><b data-head="${i}"></b></div><span>0:30 / ${mmss(r.dur)}</span></div>` : ""}
         </div>
         <div class="sside"><span class="sdur">${mmss(r.dur)}</span><span class="ssrc">${r.src.join(" + ")}</span></div>
         ${r.preview ? `<button class="sstudio" data-studio="${i}" title="Remix the 30-second preview in Studio" aria-label="Remix in Studio"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Remix</span></button>` : ""}
@@ -2359,7 +2375,7 @@ async function loadPreviewToStudio(i){
     const blob = await res.blob();
     const ext = /\.m4a|aac/i.test(r.preview) ? "m4a" : "mp3";
     const name = (r.artist + " - " + r.title).replace(/[\/:*?"<>|]+/g, " ") + " (preview)." + ext;
-    await addFiles([new File([blob], name, {type:ext === "m4a" ? "audio/mp4" : "audio/mpeg"})], undefined, {preview:true});
+    await addFiles([new File([blob], name, {type:ext === "m4a" ? "audio/mp4" : "audio/mpeg"})], undefined, {preview:true, fullDur:r.dur || 0});
   } catch { toast("Could not load this preview. Try another song.", 3000); }
 }
 let sT = 0;
