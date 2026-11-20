@@ -646,6 +646,12 @@ body.ab-on .deck::after{content:"ORIGINAL \00B7  release to hear your remix";pos
 @keyframes skinIn{from{clip-path:circle(0% at var(--sx,95%) var(--sy,3%))}to{clip-path:circle(150% at var(--sx,95%) var(--sy,3%))}}
 ::view-transition-old(root){animation:none}
 
+@media (min-width:1241px){
+  .shell:has(#studio:not([hidden])){height:100vh;height:100dvh;min-height:0}
+  .studio{grid-template-rows:minmax(0,1fr)}
+  .studio>.panel{min-height:0}
+  .deck{overflow-y:auto}
+}
 @media (max-width:1240px){
   .studio{grid-template-columns:270px minmax(0,1fr)}
   .mix{grid-column:2}
@@ -735,6 +741,12 @@ const TOK = {c1:"#ff6f9f", c2:"#ffb067", rest:"rgba(255,255,255,.18)"};
 function refreshTok(){ const cs = getComputedStyle(document.documentElement);
   TOK.c1 = cs.getPropertyValue("--c1").trim() || TOK.c1; TOK.c2 = cs.getPropertyValue("--c2").trim() || TOK.c2; TOK.rest = cs.getPropertyValue("--rest").trim() || TOK.rest; }
 const savePrefs = () => { try { localStorage.setItem("sw2-prefs", JSON.stringify(prefs)); } catch {} };
+// v1.13: Mix controls go back to the defaults once for everyone (Speed, Pitch, Reverb, Bass boost, Track volume shown and on)
+const DEF_ON = ["speed", "pitch", "reverb", "bass", "volume"];
+const resetMixDefaults = prefs.showV !== 2;
+if (resetMixDefaults){ let had = false; try { had = !!localStorage.getItem("sw2-prefs"); } catch {}
+  prefs.show = {}; prefs.showV = 2; if (had) savePrefs(); }
+const defaultOn = on => { if (!on) return on; const o = Object.assign({}, on); DEF_ON.forEach(k => delete o[k]); return o; };
 
 /* ================= DSP: shared limiter (worklet + export) ================= */
 const LIMITER_SRC = `
@@ -772,8 +784,8 @@ const Limiter = new Function(LIMITER_SRC + ";return Limiter;")();
 const PLAYER_SRC = `
 class PlayerProc extends AudioWorkletProcessor{
   static get parameterDescriptors(){return [
-    {name:"tempo",defaultValue:1,minValue:0.1,maxValue:4,automationRate:"k-rate"},
-    {name:"pitch",defaultValue:1,minValue:0.1,maxValue:4,automationRate:"k-rate"}];}
+    {name:"tempo",defaultValue:1,minValue:0.1,maxValue:10,automationRate:"k-rate"},
+    {name:"pitch",defaultValue:1,minValue:0.1,maxValue:10,automationRate:"k-rate"}];}
   constructor(o){
     super(); const p=o.processorOptions;
     this.ch=p.channels; this.nc=this.ch.length; this.len=this.ch[0].length; this.srate=p.rate; this.rs=p.rate/sampleRate;
@@ -978,8 +990,8 @@ const mix = s => {
   return {bassOn, lowG:Math.pow(10, (s.bass/10)/20), depth:(s.d8/100)*0.9,
           bright:9*(s.bright || 0)/100, room:s.room || 0, roomF:20000*Math.pow(380/20000, (s.room || 0)/100),
           punch:(s.punch || 0)/100, wa:(1 + w)/2, wb:(1 - w)/2, width:w,
-          echoWet:0.5*e, echoFb:e > 0 ? 0.25 + 0.35*e : 0, noise:0.2*(s.noise || 0)/100,
-          dry:1 - 0.22*rv, wet:1.45*rv, master:volGain(s.volume), drive:clamp((s.volume-100)/100, 0, 1)};
+          echoWet:0.5*e, echoFb:e > 0 ? Math.min(0.95, 0.25 + 0.35*e) : 0, noise:0.2*(s.noise || 0)/100,
+          dry:Math.max(0, 1 - 0.22*rv), wet:1.45*rv, master:volGain(s.volume), drive:clamp((s.volume-100)/100, 0, 1)};
 };
 function applyFx(n, s, ctx, now){
   const m = mix(s), t = ctx.currentTime;
@@ -1003,8 +1015,8 @@ const chans = b => { const a = []; for (let c=0;c<b.numberOfChannels;c++) a.push
 /* ================= state ================= */
 const DEF = () => ({speed:1, reverb:0, pitchOn:false, pitch:0, bass:0, bright:0, room:0, echo:0, punch:0, width:100, d8:0, noise:0, volume:100});
 const PARAMS = [
-  {k:"speed",  label:"Speed",     min:0.5, max:1.5, step:0.01, def:1,   fmt:v => (+v).toFixed(2)+"×", scale:["0.5×","1×","1.5×"]},
-  {k:"pitch",  label:"Pitch",     min:-12, max:12,  step:0.5,  def:0,   fmt:v => (v>0?"+":"")+(+v).toFixed(1)+" st", scale:["−12 st","0","+12 st"]},
+  {k:"speed",  label:"Speed",     min:0.5, max:1.5, step:0.01, def:1,   hardMin:0.1, hardMax:10,   fmt:v => (+v).toFixed(2)+"×", scale:["0.5×","1×","1.5×"]},
+  {k:"pitch",  label:"Pitch",     min:-12, max:12,  step:0.5,  def:0,   hardMin:-36, hardMax:36,   fmt:v => (v>0?"+":"")+(+v).toFixed(1)+" st", scale:["−12 st","0","+12 st"]},
   {k:"reverb", label:"Reverb",    min:0,   max:100, step:1,    def:0,   fmt:v => Math.round(v)+"%", scale:["dry","50%","hall"]},
   {k:"bass",   label:"Bass boost",min:0,   max:100, step:1,    def:0,   fmt:v => "+"+Math.round(v)+"%", scale:["0","+50%","+100%"]},
   {k:"bright", label:"Brightness", min:0,  max:100, step:1,    def:0,   fmt:v => "+"+Math.round(v)+"%", scale:["0","+50%","+100%"], hint:"Brings back clear highs"},
@@ -1037,7 +1049,7 @@ let cur = null, playing = false, player = null, playerTrack = null, lastMsgT = 0
 // A/B: while "Original" is held the song plays untouched; the remix settings stay as they are
 let abOrig = false;
 const TOGG = ["speed", "reverb", "bass", "bright", "room", "echo", "punch", "width", "d8", "noise", "volume"];
-const HIDDEN_BY_DEFAULT = ["d8", "width", "noise"];
+const HIDDEN_BY_DEFAULT = ["bright", "room", "echo", "punch", "width", "d8", "noise"];
 const isShown = k => prefs.show && prefs.show[k] !== undefined ? !!prefs.show[k] : !HIDDEN_BY_DEFAULT.includes(k);
 const isOn = (s, k) => isShown(k) && (!s.on || s.on[k] !== false);
 function applied(s){ const d = DEF(), o = Object.assign(DEF(), s); TOGG.forEach(k => { if (!isOn(s, k)) o[k] = d[k]; }); if (!isShown("pitch")) o.pitchOn = false; return o; }
@@ -1568,7 +1580,7 @@ function renderStage(){
     v.addEventListener("focus", () => { v.value = cur.s[p.k]; v.select(); });
     v.addEventListener("blur", syncControls);
     v.addEventListener("keydown", e => { if (e.key === "Enter") v.blur(); if (e.key === "Escape"){ v.value = cur.s[p.k]; v.blur(); } });
-    v.addEventListener("change", () => { const x = parseFloat(String(v.value).replace(",", ".")); if (!isNaN(x)) setParam(p.k, clamp(x, p.min, p.max), p.k === "pitch"); });
+    v.addEventListener("change", () => { const x = parseFloat(String(v.value).replace(",", ".")); if (!isNaN(x) && isFinite(x)) setParam(p.k, clamp(x, p.hardMin ?? p.min, p.hardMax ?? 1e6), p.k === "pitch"); });
   });
   const psw = $("#pitchSw"); if (psw) psw.onclick = () => setParam("pitchOn", !cur.s.pitchOn);
   mixEl.querySelectorAll("[data-ptog]").forEach(b => b.onclick = () => setOn(b.dataset.ptog, !isOn(cur.s, b.dataset.ptog)));
@@ -1629,7 +1641,7 @@ function syncControls(){
   const s = cur.s;
   PARAMS.forEach(p => {
     const r = $("#r-" + p.k), v = $("#v-" + p.k); if (!r) return;
-    const val = s[p.k] ?? p.def; r.value = val; r.style.setProperty("--p", ((val-p.min)/(p.max-p.min)*100) + "%");
+    const val = s[p.k] ?? p.def; r.value = val; r.style.setProperty("--p", clamp((val-p.min)/(p.max-p.min)*100, 0, 100) + "%");
     if (p.k === "pitch") r.disabled = !s.pitchOn;
     if (document.activeElement !== v){
       if (p.k === "pitch" && !s.pitchOn){ v.value = "follows"; v.classList.add("off"); }
@@ -2064,7 +2076,7 @@ async function restoreSession(){
     try {
       const f = await dbOp("files", "readonly", st => st.get(r.id)); if (!f || !f.file) continue;
       const buffer = await ac.decodeAudioData((await f.file.arrayBuffer()).slice(0));
-      tracks.push({id:r.id, name:r.name, file:f.file, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), r.s), pos:clamp(r.pos || 0, 0, buffer.duration), hue:r.hue || HUES[i % HUES.length], preview:!!r.preview, fullDur:r.fullDur || 0, histId:r.histId || 0, art:r.art || ""});
+      tracks.push({id:r.id, name:r.name, file:f.file, buffer, peaks:peaksOf(buffer), s:Object.assign(DEF(), r.s, resetMixDefaults ? {on:defaultOn(r.s && r.s.on)} : {}), pos:clamp(r.pos || 0, 0, buffer.duration), hue:r.hue || HUES[i % HUES.length], preview:!!r.preview, fullDur:r.fullDur || 0, histId:r.histId || 0, art:r.art || ""});
     } catch {}
   }
   hideToast();
@@ -2787,6 +2799,10 @@ function histRow(e, compact){
 /* ================= what's new ================= */
 // Add a new entry at the TOP of this list with every update. The newest version is CHANGELOG[0].
 const CHANGELOG = [
+  {v:"1.13", date:"2026-11-20", title:"Tidier studio", items:[
+    "The studio fits your window: when the Mix or Queue list is long, it scrolls inside its panel instead of stretching the page.",
+    "Mix shows Speed, Pitch, Reverb, Bass boost and Track volume by default. The other effects are hidden until you turn them on in Settings, Mix controls.",
+    "Type any number in a value box to go past the end of a slider, for example 400% volume or 300% bass boost. Speed goes from 0.1x to 10x, pitch from -36 to +36 semitones."]},
   {v:"1.12", date:"2026-11-19", title:"Smoother animations", items:[
     "The moon, light beams and glowing buttons use much less CPU, so the site runs smoother on high refresh rate screens and busy PCs.",
     "Nothing looks different."]},
